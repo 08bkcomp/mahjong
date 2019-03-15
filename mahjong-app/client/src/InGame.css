@@ -1,0 +1,97 @@
+html,body,#root {
+		height:100vh;
+		min-height:100vh;
+		max-height:100vh;
+		background-color: red;
+}
+
+.board {
+		height:100vh;
+		display: flex;
+		margin: 0;
+}
+
+.gameinfo {
+		display: flex;
+		flex-direction: column;
+		flex: 0 0 10em;
+		background-color: green;
+}
+
+.littleinfo {
+		flex: 0 0 1.5em;
+		text-align: center;
+		font-size: 4em;
+}
+
+.actionlist {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+}
+
+.actionactive, .actioninactive {
+		flex: 1;
+		text-align: center;
+		font-size: 3em;
+		justify-content: center;
+		width: 100%;
+}
+
+.actionactive {
+		background-color: orange;
+}
+
+.actioninactive {
+		background-color: gray;
+}
+
+.mainboard {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+}
+
+.discards {
+		flex: 1;
+}
+
+.myfullhand {
+		display: flex;
+		background-color: yellow;
+		flex: 0 0 6em;
+		width: 100%;
+}
+
+.otherhands {
+		display: flex;
+		background-color: yellow;
+		flex: 0 0 4em
+}
+
+.opponent {
+		display: flex;
+		flex: 1;
+}
+
+.opwind {
+		flex: 0;
+		background-color: lightblue;
+}
+
+.ophand {
+		display: flex;
+		flex: 1;
+		background-color: purple;
+}
+
+.myhand {
+		background-color: lightgreen;
+		display: flex;
+}
+
+.myexposed {
+		display: flex;
+}
