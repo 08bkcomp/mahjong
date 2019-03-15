@@ -162,12 +162,4 @@ class Board extends Component {
 		}
 }
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App" class="focuspiece">{dragons.red}</div>
-    );
-  }
-}
-
 export default Board;
