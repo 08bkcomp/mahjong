@@ -1,19 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Switch, Route, BrowserRouter } from 'react-router-dom';
-import openSocket from 'socket.io-client';
-import './index.css';
+import socket from './socket';
 import Board from './InGame';
 import Lobby from './Lobby';
 import Splash from './Splash';
-
-const socket = openSocket('http://localhost:5000')
+import "https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css";
+import './index.css';
 
 ReactDOM.render(
 		<BrowserRouter>
 			<Switch>
 				<Route exact path='/' component={Splash}/>
-				<Route path='/lobby/:lobbyId' component={Lobby}/>
+				<Route path='/lobby' component={Lobby}/>
 				<Route path='/game/:gameId' component={Board}/>
 			</Switch>
 		</BrowserRouter>
