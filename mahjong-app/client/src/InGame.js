@@ -115,17 +115,18 @@ class Board extends Component {
 				this.state = {
 						info: {
 								roundWind: winds.east,
-								myWind: winds.west,
-								myActions: {draw: false,
-											chow: false,
-											pung: false,
-											kong: false,
-											eye: false,
-											rob: false,
-											mahjong: false,
-											},
+								discards: [],
 								piecesLeft: 144,
-							},
+						},
+						myWind: winds.west,
+						myActions: {draw: false,
+									chow: false,
+									pung: false,
+									kong: false,
+									eye: false,
+									rob: false,
+									mahjong: false,
+									},
 						myHand: [],
 						myExposed: [winds.east, pieceback],
 						otherExposed: [
@@ -136,7 +137,6 @@ class Board extends Component {
 											hand: [dots[2],dots[3],dots[4],],
 										}
 										],
-						discards: [],
 				}
 		}
 

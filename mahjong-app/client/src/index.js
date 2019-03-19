@@ -5,7 +5,6 @@ import socket from './socket';
 import Board from './InGame';
 import Lobby from './Lobby';
 import Splash from './Splash';
-import "https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css";
 import './index.css';
 
 ReactDOM.render(

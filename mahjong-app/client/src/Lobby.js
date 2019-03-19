@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import socket from './socket';
 import PlayerList from './LobbyPlayerList';
 import GameList from './LobbyGameList';
+import CreateGame from './LobbyCreateGame';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col'
+import Row from 'react-bootstrap/Row'
 
 export default class Lobby extends Component {
 		constructor(props) {
@@ -12,10 +16,11 @@ export default class Lobby extends Component {
 
 		render() {
 				return (
-						<div class="lobby">
-							<GameList />
-							<PlayerList />
-						</div>
+						<Container><Row>
+							<Col><CreateGame /></Col>
+							<Col><GameList /></Col>
+							<Col><PlayerList /></Col>
+						</Row></Container>
 				);
 		}
 }

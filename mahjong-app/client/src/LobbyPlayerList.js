@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import socket from './socket';
 
 function PlayerItem(props) {
-		var class = "playeritem" + (props.light ? " light" : " dark");
+		var myClass = "playeritem" + (props.light ? " light" : " dark");
 		return (
-				<li class={class}>{props.nickname}</li>
+				<li class={myClass}>{props.nickname}</li>
 		);
 }
 
@@ -13,7 +13,7 @@ export default class PlayerList extends Component {
 		constructor(props) {
 				super(props);
 				this.state = {
-						players = [],
+						players: [],
 				};
 
 				socket.on('load players', pidToName => {
