@@ -12,7 +12,7 @@ ReactDOM.render(
 			<Switch>
 				<Route exact path='/' component={Splash}/>
 				<Route path='/lobby' component={Lobby}/>
-				<Route path='/game/:gameId' component={Board}/>
+				<Route path='/game' component={Board}/>
 			</Switch>
 		</BrowserRouter>
 ,document.getElementById('root'));

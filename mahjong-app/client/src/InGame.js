@@ -1,165 +1,194 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
+import React, {Component} from 'react';
+import Alert from 'react-bootstrap/Alert';
 import './InGame.css';
 import './index.css';
+import socket from './socket';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
 
 var winds = {
-		east: '\u{1F000}',
-		south: '\u{1F001}',
-		west: '\u{1F002}',
-		north: '\u{1F003}',
-}
+  east: '\u{1F000}',
+  south: '\u{1F001}',
+  west: '\u{1F002}',
+  north: '\u{1F003}',
+};
 
-var dragons = {
-		red: '\u{1F004}',
-		green: '\u{1F005}',
-		white: '\u{1F006}',
-}
-
-var seasons = {
-		spring: '\u{1F026}',
-		summer: '\u{1F027}',
-		autumn: '\u{1F028}',
-		winter: '\u{1F029}',
-}
-
-var flowers = {
-		plum: '\u{1F022}',
-		orchid: '\u{1F023}',
-		bamboo: '\u{1F024}',
-		chrys: '\u{1F025}',
-}
-
-var bamboo = ['\u{1F010}','\u{1F011}','\u{1F012}','\u{1F013}','\u{1F014}','\u{1F015}','\u{1F016}','\u{1F017}','\u{1F018}']
-
-var characters = ['\u{1F007}','\u{1F008}','\u{1F009}','\u{1F00A}','\u{1F00B}','\u{1F00C}','\u{1F00D}','\u{1F00E}','\u{1F00F}',]
-
-var dots = ['\u{1F019}','\u{1F01A}','\u{1F01B}','\u{1F01C}','\u{1F01D}','\u{1F01E}','\u{1F01F}','\u{1F020}','\u{1F021}',]
-
-var pieceback = '\u{1F02B}'
+var pieceback = '\u{1F02B}';
 
 function Piece(props) {
-		var comment = props.comment ? props.comment : "";
-		return (
-				<div class={props.class}>{comment + props.piece}</div>
-		);
+  var comment = props.comment ? props.comment : '';
+  return <div class={props.class}>{comment + props.piece}</div>;
 }
 
 function ActionItem(props) {
-		return (
-				<div class={props.active ? "actionactive" : "actioninactive"}><span>{props.action}</span></div>
-		)
+  return (
+    <div class={props.active ? 'actionactive' : 'actioninactive'}>
+      <span>{props.action}</span>
+    </div>
+  );
 }
 
 function ActionList(props) {
-		if(!props.status) {return null};
-		return (
-				<div class="actionlist">
-						<ActionItem active={props.status.draw} action="Draw"/>
-						<ActionItem active={props.status.chow} action="Chow"/>
-						<ActionItem active={props.status.pung} action="Pung"/>
-						<ActionItem active={props.status.kong} action="Kong"/>
-						<ActionItem active={props.status.eye} action="Eye (M)"/>
-						<ActionItem active={props.status.rob} action="Rob (M)"/>
-						<ActionItem active={props.status.mahjong} action="Mahjong"/>
-				</div>
-		)
+  return (
+    <div class="actionlist">
+      <ActionItem active={props.actions.draw} action="Draw" />
+      <ActionItem active={props.actions.chow} action="Chow" />
+      <ActionItem active={props.actions.pung} action="Pung" />
+      <ActionItem active={props.actions.kong} action="Kong" />
+      <ActionItem active={props.actions.eye} action="Eye (M)" />
+      <ActionItem active={props.actions.rob} action="Rob (M)" />
+      <ActionItem active={props.actions.mahjong} action="Mahjong" />
+    </div>
+  );
 }
 
 function GameInfo(props) {
-		var info = props.info;
+  return (
+    <div class="gameinfo">
+      <Piece
+        class="focuspiece littleinfo"
+        piece={winds[props.publicInfo.round]}
+        comment="R:"
+      />
+      <Piece
+        class="focuspiece littleinfo"
+        piece={winds[props.myGameState.wind]}
+        comment="P:"
+      />
+      <div class="littleinfo">{props.publicInfo.numPiecesLeft}</div>
+      <ActionList actions={props.myGameState.actions} />
+    </div>
+  );
+}
 
-		return (
-				<div class="gameinfo">
-						<Piece class="focuspiece littleinfo" piece={info.myWind} comment="R:"/>
-						<Piece class="focuspiece littleinfo" piece={info.roundWind} comment="P:"/>
-						<div class="littleinfo">{info.piecesLeft}</div>
-						<ActionList status={info.myActions} />
-				</div>
-		);
+function ExposedGroup(props) {
+  if (props.pieceGroup.isConcealed) {
+    props.pieceGroup.pieces[1] = pieceback;
+    props.pieceGroup.pieces[2] = pieceback;
+  }
+  return (
+    <div>
+      {props.pieceGroup.pieces.map((piece, i) => {
+        return <Piece class={props.class} piece={piece} />;
+      })}
+    </div>
+  );
+}
+
+function ExposedHand(props) {
+  return (
+    <div class={props.divclass}>
+      {props.exposed.map((pieceGroup, i) => {
+        return <ExposedGroup pieceGroup={pieceGroup} class={props.class} />;
+      })}
+    </div>
+  );
 }
 
 function OpHand(props) {
-		return (
-				<div class="opponent">
-						<div class="opwind otherpiece">{props.wind}</div>
-						<div class="ophand">
-							{props.hand.map((piece, i) => {
-									return <Piece class="otherpiece" piece={piece} />;
-							})}
-						</div>
-				</div>
-		)
+  return (
+    <div class="opponent">
+      <div class="opwind otherpiece">{winds[props.wind]}</div>
+      <ExposedHand
+        class="otherpiece"
+        divclass="ophand"
+        exposed={props.exposed}
+      />
+    </div>
+  );
 }
 
 function MyHand(props) {
-		return (
-				<div class="myfullhand">
-						<div class="myhand">
-							{props.hand.map((piece, i) => {
-									return <Piece class="focuspiece" piece={piece} />;
-							})}
-						</div>
-						<div class="myexposed">
-							{props.exposed.map((piece, i) => {
-									return <Piece class="focuspiece" piece={piece} />;
-							})}
-						</div>
-				</div>
-		)
+  return (
+    <Container>
+      <Row>
+        <Alert variant="warning">
+          <ExposedHand
+            class="focuspiece"
+            divclass="myexposed"
+            exposed={props.exposed}
+          />
+        </Alert>
+      </Row>
+      <Row>
+        <Alert variant="info">
+          <div class={'myexposed'}>
+            {props.hand.map((piece, i) => {
+              return <Piece class="focuspiece" piece={piece} />;
+            })}
+          </div>
+        </Alert>
+      </Row>
+    </Container>
+  );
 }
 
 class Board extends Component {
-		constructor(props) {
-				super(props);
-				this.state = {
-						info: {
-								roundWind: winds.east,
-								discards: [],
-								piecesLeft: 144,
-						},
-						myWind: winds.west,
-						myActions: {draw: false,
-									chow: false,
-									pung: false,
-									kong: false,
-									eye: false,
-									rob: false,
-									mahjong: false,
-									},
-						myHand: [],
-						myExposed: [winds.east, pieceback],
-						otherExposed: [
-										{	wind: winds.north,
-											hand: [bamboo[3]],
-										},
-										{	wind: winds.west,
-											hand: [dots[2],dots[3],dots[4],],
-										}
-										],
-				}
-		}
+  constructor(props) {
+    super(props);
+    this.state = {
+      gameLoaded: false,
+      publicInfo: null,
+      myGameState: null,
+      otherExposed: null,
+    };
+    socket.on(
+      'reload game state',
+      (publicInfo, personalGameState, otherExposed) => {
+        this.setState({
+          gameLoaded: true,
+          publicInfo: publicInfo,
+          myGameState: personalGameState,
+          otherExposed: otherExposed,
+        });
+      },
+    );
+  }
 
-		render() {
-				return (
-						<div class="board">
-							<GameInfo info={this.state.info}/>
-							<div class="mainboard">
-								<div class="otherhands">
-									{this.state.otherExposed.map((op, i) => {
-											return <OpHand wind={op.wind} hand={op.hand} />;
-									})}
-								</div>
-								<div class="discards">
-									{this.state.discards.map((piece, i) => {
-											return <Piece class="focuspiece" piece={piece} />;
-									})}
-								</div>
-								<MyHand hand={this.state.myHand} exposed={this.state.myExposed} />
-							</div>
-						</div>
-				)
-		}
+  render() {
+    if (!this.state.gameLoaded) {
+      return (
+        <Alert>
+          <Alert.Heading>Game loading...</Alert.Heading>
+          <p>{'Please wait while we set up a new game for you.'}</p>
+        </Alert>
+      );
+    }
+
+    if (false) {
+      console.log(this.state);
+      return <div>{'game loaded'}</div>;
+    }
+
+    console.log(this.state);
+    return (
+      <div class="board">
+        <GameInfo
+          publicInfo={this.state.publicInfo}
+          myGameState={this.state.myGameState}
+        />
+        <div class="mainboard">
+          <div class="otherhands">
+            {Object.keys(this.state.otherExposed).map((wind, i) => {
+              return (
+                <OpHand wind={wind} exposed={this.state.otherExposed[wind]} />
+              );
+            })}
+          </div>
+          <div class="discards">
+            {this.state.publicInfo.discards.map((piece, i) => {
+              return <Piece class="focuspiece" piece={piece} />;
+            })}
+          </div>
+          <MyHand
+            hand={this.state.myGameState.hand}
+            exposed={this.state.myGameState.exposed}
+          />
+        </div>
+      </div>
+    );
+  }
 }
 
 export default Board;
