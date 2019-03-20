@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+<<<<<<< HEAD
+=======
+# tags file
+tags*
+
+>>>>>>> 0f212af... second try
 # Runtime data
 pids
 *.pid
