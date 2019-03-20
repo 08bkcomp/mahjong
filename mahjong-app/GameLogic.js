@@ -375,18 +375,42 @@ var possibleChows = (hand, newTile) => {
   return false;
 };
 
+var emptyActions = () => {
+  return {
+    draw: false,
+    discard: false,
+    chow: false,
+    pung: false,
+    kong: false,
+    eye: false,
+    rob: false,
+    mahjong: false,
+  };
+};
+
+var wipeActions = gameState => {
+  for (pid of gameState.publicInfo.admin.playerPids) {
+    gameState[pid].actions = emptyActions();
+  }
+  return gameState;
+};
+
 var drawTile = (pid, gameState) => {
   // first check the user is allowed to draw
   if (!gameState[pid].actions.draw) {
-    return gameState;
+    return null;
   }
+  // firstly wipe all actions, as the prev discard is now dead
+  gameState = wipeActions(gameState);
   do {
     var newTile = gameState.private.wall.pop();
     if (isBonus(newTile)) {
       gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
     } else {
       // now we have drawn a normal tile, need to update the possible actions
-      gameState[pid].actions.draw = false;
+      // for the current player (everyone else has no actions)
+	    // note other that possible kongs and discarding, the current player
+	    // also cannot do anything else
       gameState[pid].actions.discard = true;
       gameState[pid].kong = possibleKongs(
         gameState[pid].hand,
@@ -394,17 +418,89 @@ var drawTile = (pid, gameState) => {
         newTile,
         false,
       );
-      gameState[pid].pung = false;
-      gameState[pid].chow = false;
-      gameState[pid].eye = false;
-      gameState[pid].rob = false;
-      gameState[pid].mahjong = false;
       // now we can add the tile to the hand, since actions have been recalculated
       gameState[pid].hand.push(newTile);
     }
   } while (isBonus(newTile));
-  return null;
+  return gameState;
 };
+
+var updateActionsOnDiscard = (
+  personalGameState,
+  discardedTile,
+  isNextPlayer,
+) => {
+	personalGameState.actions = emptyActions();
+  personalGameState.actions.draw = isNextPlayer;
+  personalGameState.actions.kong = possibleKongs(
+    personalGameState.hand,
+    personalGameState.exposed,
+    discardedTile,
+    true,
+  );
+  personalGameState.actions.pung = possiblePungs(
+    personalGameState.hand,
+    discardedTile,
+  );
+  personalGameState.actions.chow = possibleChows(
+    personalGameState.hand,
+    discardedTile,
+  );
+  personalGameState.actions.mahjong = false;
+  return personalGameState;
+};
+
+var discardTile = (pid, gameState, tileToDiscard) => {
+  //first check the user can discard
+  if (!gameState[pid].actions.discard) {
+    return null;
+  }
+  // then check the tile to discard is in the hand
+  if (!gameState[pid].hand.includes(tileToDiscard)) {
+    return null;
+  }
+  // now update the actions for the discarding player
+  for (action in gameState[pid].actions) {
+    gameState[pid].actions[action] = false;
+  }
+  // and remove the tile from the discarding player's hand
+  gameState[pid].hand.splice(gameState[pid].hand.indexOf(tileToDiscard), 1);
+  // now we need to update everyone elses options
+  var nextPlayerPid =
+    gameState.publicInfo.admin.orderToPid[gameState.publicInfo.currentTurn + 1];
+  for (otherPid of gameState.publicInfo.admin.playerPids) {
+    if (otherPid != pid) {
+      gameState[otherPid] = updateActionsOnDiscard(
+        gameState[otherPid],
+        tileToDiscard,
+        otherPid == nextPlayerPid,
+      );
+    }
+  }
+  return gameState;
+};
+
+var emptyAction = () => {
+	pid: null,
+		tileGroupForAction: null,
+}
+
+var groupTypeComparator = (typeA, typeB) => {
+
+}
+
+var actionComparator = (actionA, actionB, publicInfo) => {
+	if(actionA.tileGroupForAction.type)
+}
+
+var actionPrioritiser(requestedAction, currentActionsList) => {
+	if(currentActionsList.length == 0){
+		return [requestedAction,];
+	}
+	for (otherAction of currentActionsList) {
+
+	}
+}
 
 var requestExposed = (pid, gameState) => {
   console.log(pid + 'called requestExposed');
@@ -425,4 +521,5 @@ var requestExposed = (pid, gameState) => {
 module.exports = {
   initGameState: initGameState,
   requestExposed: requestExposed,
+  drawTile: drawTile,
 };
