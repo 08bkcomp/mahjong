@@ -13,7 +13,7 @@ var partialGames = {};
 var lobbyInfo = {players: pidToName, games: partialGames};
 
 function distributeGameState(gamename, gameState) {
-  var room = 'ingame:' + gamename;
+  var room = 'gamename:' + gamename;
   io.of('/')
     .in(room)
     .clients(function(error, clients) {
@@ -207,6 +207,7 @@ io.on('connection', client => {
   client.on('disconnect', () => {
     console.log('player disconnected: ' + client.id);
   });
+
 });
 
 io.listen(port);

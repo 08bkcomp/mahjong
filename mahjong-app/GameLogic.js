@@ -61,19 +61,17 @@ var dots = [
   '\u{1F021}',
 ];
 
-var pieceback = '\u{1F02B}';
+var tileback = '\u{1F02B}';
 
 var getNewWall = () => {
-  var fullWall = [];
-  fullWall = fullWall.concat(bamboo);
-  fullWall = fullWall.concat(characters);
-  fullWall = fullWall.concat(dots);
-  fullWall = fullWall.concat(Object.values(dragons));
-  fullWall = fullWall.concat(Object.values(winds));
-  fullWall = fullWall.concat(fullWall, fullWall);
-  fullWall = fullWall.concat(Object.values(seasons));
-  fullWall = fullWall.concat(Object.values(flowers));
-  console.log(fullWall);
+  // first add tiles for which there are four copies
+  var fullWall = [...bamboo, ...characters, ...dots];
+  fullWall = [...fullWall, ...Object.values(dragons)];
+  fullWall = [...fullWall, ...Object.values(winds)];
+  fullWall = [...fullWall, ...fullWall, ...fullWall, ...fullWall];
+  // now add tiles for which there are only one each
+  fullWall = [...fullWall, ...Object.values(seasons)];
+  fullWall = [...fullWall, ...Object.values(flowers)];
   return fullWall;
 };
 
@@ -82,7 +80,7 @@ var emptyGame = () => {
     publicInfo: {
       round: null,
       discards: null,
-      numPiecesLeft: 144,
+      numTilesLeft: 144,
       currentTurn: null,
       admin: null,
     },
@@ -110,6 +108,7 @@ var emptyPersonalGame = () => {
     exposed: null,
     actions: {
       draw: false,
+      discard: false,
       chow: false,
       pung: false,
       kong: false,
@@ -120,9 +119,9 @@ var emptyPersonalGame = () => {
   };
 };
 
-const pieceGroup = (pieces, type, isConcealed) => {
+var tileGroup = (tiles, type, isConcealed) => {
   return {
-    pieces: pieces,
+    tiles: tiles,
     type: type,
     isConcealed: isConcealed,
   };
@@ -169,22 +168,22 @@ var convertWindToOrder = wind => {
   }
 };
 
-var isFlower = card => {
-  if ('\u{1F022}' <= card && card <= '\u{1F025}') {
+var isFlower = tile => {
+  if ('\u{1F022}' <= tile && tile <= '\u{1F025}') {
     return true;
   }
   return false;
 };
 
-var isSeason = card => {
-  if ('\u{1F026}' <= card && card <= '\u{1F029}') {
+var isSeason = tile => {
+  if ('\u{1F026}' <= tile && tile <= '\u{1F029}') {
     return true;
   }
   return false;
 };
 
-var isBonus = card => {
-  return isFlower(card) || isSeason(card);
+var isBonus = tile => {
+  return isFlower(tile) || isSeason(tile);
 };
 
 var initAdmin = players => {
@@ -231,18 +230,180 @@ initGameState = players => {
 
     var startHandSize = game[pid].order == 0 ? 14 : 13;
     while (game[pid].hand.length < startHandSize) {
-      var newCard = game.private.wall.pop();
-      game.publicInfo.admin.numPiecesLeft =
-        game.publicInfo.admin.numPiecesLeft - 1;
-      if (isBonus(newCard)) {
-        game[pid].exposed.push(pieceGroup([newCard], 'bonus', false));
+      var newTile = game.private.wall.pop();
+      game.publicInfo.admin.numTilesLeft =
+        game.publicInfo.admin.numTilesLeft - 1;
+      if (isBonus(newTile)) {
+        game[pid].exposed.push(tileGroup([newTile], 'bonus', false));
       } else {
-        game[pid].hand.push(newCard);
+        game[pid].hand.push(newTile);
       }
     }
     game[pid].hand.sort();
+    game[pid].actions.discard = game[pid].order == 0;
   }
   return game;
+};
+
+var isKong = tiles => {
+  var uniqueTiles = new Set(tiles);
+  if (tiles.length == 4 && uniqueTiles.size == 1) {
+    return true;
+  }
+  return false;
+};
+
+var kongScenarioOne = (hand, newTile) => {
+  var fullHand = [...hand, newTile];
+  fullHand.sort();
+  var allFullConcKongs = [];
+  for (i = 0; i < hand.length; i++) {
+    var possKong = hand.slice(i, i + 4);
+    if (isKong(possKong)) {
+      allFullConcKongs = [
+        ...allFullConcKongs,
+        tileGroup(possKong, 'kong', true),
+      ];
+    }
+  }
+  return allFullConcKongs;
+};
+
+var kongScenarioTwo = (hand, newTile) => {
+  var matches = hand.filter(tile => tile == newTile);
+  if (matches.length == 3) {
+    return [tileGroup([...matches, newTile], 'kong', false)];
+  }
+  return [];
+};
+
+var kongScenarioThree = (exposed, newTile) => {
+  for (group of exposed) {
+    if (group.tiles[0] == newTile && group.type == 'pung') {
+      return [tileGroup([...group.tiles, newTile], 'kong', true)];
+    }
+  }
+  return [];
+};
+
+var possibleKongs = (hand, exposed, newTile, isDiscard) => {
+  // in this function, we check given a hand of concealed tiles and a new one
+  // what kongs are possible. note the THREE ways one may get a kong opportunity:
+  //
+  // ONE: fully concealed, i.e. new tile a draw and already had three in hand
+  // TWO: off a discard, i.e. tile is discard but three already in hand
+  // THREE: melding, i.e. pick up the fourth tile completing an exposed pung
+  //
+  // in this function we will compile the results of checking all three scenarios
+  // using helper functions from above for each case
+  var allKongs;
+  if (isDiscard) {
+    allKongs = kongScenarioTwo(hand, newTile);
+  } else {
+    var caseOneKongs = kongScenarioOne(hand, newTile);
+    var caseThreeKongs = kongScenarioThree(exposed, newTile);
+    allKongs = [...caseOneKongs, ...caseThreeKongs];
+  }
+
+  if (allKongs.length > 0) {
+    return allKongs;
+  }
+  return false;
+};
+
+var isPung = tiles => {
+  var uniqueTiles = new Set(tiles);
+  if (tiles.length == 3 && uniqueTiles.size == 1) {
+    return true;
+  }
+  return false;
+};
+
+var possiblePungs = (hand, newTile) => {
+  var matches = hand.filter(tile => tile == newTile);
+  if (matches.length >= 2) {
+    // not we cannot use [...matches, newTile] since if you already have 3
+    // in hand, this would give an array of four tiles which is wrong
+    return [tileGroup([newTile, newTile, newTile], 'pung', false)];
+  }
+  return false;
+};
+
+var findShiftedTile = (hand, compareTile, shift) => {
+  var checkTile = tile => {
+    return tile.codePointAt() == compareTile.codePointAt() + shift;
+  };
+  return hand.find(checkTile);
+};
+
+var upperChow = (hand, newTile) => {
+  var upupTile = findShiftedTile(hand, newTile, 2);
+  var upTile = findShiftedTile(hand, newTile, 1);
+  if (upupTile && upTile) {
+    return [tileGroup([newTile, upTile, upupTile], 'chow', false)];
+  }
+  return [];
+};
+
+var middleChow = (hand, newTile) => {
+  var upTile = findShiftedTile(hand, newTile, 1);
+  var downTile = findShiftedTile(hand, newTile, -1);
+  if (upTile && downTile) {
+    return [tileGroup([downTile, newTile, upTile], 'chow', false)];
+  }
+  return [];
+};
+
+var lowerChow = (hand, newTile) => {
+  var downdownTile = findShiftedTile(hand, newTile, -2);
+  var downTile = findShiftedTile(hand, newTile, -1);
+  if (downdownTile && downTile) {
+    return [tileGroup([downdownTile, downTile, newTile], 'chow', false)];
+  }
+  return [];
+};
+
+var possibleChows = (hand, newTile) => {
+  var allChows = [
+    ...upperChow(hand, newTile),
+    ...middleChow(hand, newTile),
+    ...lowerChow(hand, newTile),
+  ];
+  if (allChows.length > 0) {
+    return allChows;
+  }
+  return false;
+};
+
+var drawTile = (pid, gameState) => {
+  // first check the user is allowed to draw
+  if (!gameState[pid].actions.draw) {
+    return gameState;
+  }
+  do {
+    var newTile = gameState.private.wall.pop();
+    if (isBonus(newTile)) {
+      gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
+    } else {
+      // now we have drawn a normal tile, need to update the possible actions
+      gameState[pid].actions.draw = false;
+      gameState[pid].actions.discard = true;
+      gameState[pid].kong = possibleKongs(
+        gameState[pid].hand,
+        gameState[pid].exposed,
+        newTile,
+        false,
+      );
+      gameState[pid].pung = false;
+      gameState[pid].chow = false;
+      gameState[pid].eye = false;
+      gameState[pid].rob = false;
+      gameState[pid].mahjong = false;
+      // now we can add the tile to the hand, since actions have been recalculated
+      gameState[pid].hand.push(newTile);
+    }
+  } while (isBonus(newTile));
+  return null;
 };
 
 var requestExposed = (pid, gameState) => {
