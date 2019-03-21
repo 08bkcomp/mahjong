@@ -1,13 +1,16 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const io = require('socket.io')();
-const app = express();
+const socketIO = require('socket.io');
 const port = process.env.PORT || 5000;
 const GameLogic = require('./GameLogic');
 
+var app = express();
+var server = http.Server(app);
+var io = socketIO(server);
+
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 
 var ongoingGames = {};
 var pidToOngoingGames = {};
@@ -290,8 +293,8 @@ io.on('connection', client => {
   });
 });
 
-io.listen(port);
-console.log('SOCKET.IO listening on port ', port);
+//io.listen(port);
+//console.log('SOCKET.IO listening on port ', port);
 
 if (process.env.NODE_ENV === 'production') {
   // Serve any static files
@@ -301,4 +304,9 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   });
 }
-app.listen(port, () => console.log(`Listening on port ${port}`));
+//app.listen(port, () => console.log(`Listening on port ${port}`));
+
+// Starts the server.
+server.listen(port, function() {
+  console.log('Starting server on port 5000');
+});
