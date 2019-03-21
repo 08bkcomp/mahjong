@@ -20,7 +20,7 @@ html,body,#root {
 .littleinfo {
 		flex: 0 0 1.5em;
 		text-align: center;
-		font-size: 4em;
+		font-size: 3em;
 }
 
 .actionlist {
@@ -93,4 +93,17 @@ html,body,#root {
 
 .myexposed {
 		display: flex;
+}
+
+.focustile {
+	font-size: 2.75em;
+
+}
+
+.othertile {
+		font-size: 2.25em;
+}
+
+.tileback {
+		color: green;
 }

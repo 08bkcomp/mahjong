@@ -203,6 +203,10 @@ io.on('connection', client => {
   //=====================================================
   //Recieved from the overall game board
   //=====================================================
+	socket.on('discard tile', tileIndex => {
+		gameState = ongoingGames[pidToOngoingGames[socket.id]];
+
+	});
 
   client.on('disconnect', () => {
     console.log('player disconnected: ' + client.id);

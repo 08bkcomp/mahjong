@@ -11,16 +11,3 @@ body {
 code {
 		font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
-
-.focuspiece {
-	font-size: 4em;
-
-}
-
-.otherpiece {
-		font-size: 2.25em;
-}
-
-.pieceback {
-		color: green;
-}

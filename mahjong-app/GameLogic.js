@@ -409,8 +409,8 @@ var drawTile = (pid, gameState) => {
     } else {
       // now we have drawn a normal tile, need to update the possible actions
       // for the current player (everyone else has no actions)
-	    // note other that possible kongs and discarding, the current player
-	    // also cannot do anything else
+      // note other that possible kongs and discarding, the current player
+      // also cannot do anything else
       gameState[pid].actions.discard = true;
       gameState[pid].kong = possibleKongs(
         gameState[pid].hand,
@@ -430,7 +430,7 @@ var updateActionsOnDiscard = (
   discardedTile,
   isNextPlayer,
 ) => {
-	personalGameState.actions = emptyActions();
+  personalGameState.actions = emptyActions();
   personalGameState.actions.draw = isNextPlayer;
   personalGameState.actions.kong = possibleKongs(
     personalGameState.hand,
@@ -450,13 +450,9 @@ var updateActionsOnDiscard = (
   return personalGameState;
 };
 
-var discardTile = (pid, gameState, tileToDiscard) => {
+var discardTile = (pid, gameState, tileIndex) => {
   //first check the user can discard
   if (!gameState[pid].actions.discard) {
-    return null;
-  }
-  // then check the tile to discard is in the hand
-  if (!gameState[pid].hand.includes(tileToDiscard)) {
     return null;
   }
   // now update the actions for the discarding player
@@ -464,7 +460,8 @@ var discardTile = (pid, gameState, tileToDiscard) => {
     gameState[pid].actions[action] = false;
   }
   // and remove the tile from the discarding player's hand
-  gameState[pid].hand.splice(gameState[pid].hand.indexOf(tileToDiscard), 1);
+  var tileToDiscard = gameState[pid].hand[tileIndex];
+  gameState[pid].hand.splice(tileIndex, 1);
   // now we need to update everyone elses options
   var nextPlayerPid =
     gameState.publicInfo.admin.orderToPid[gameState.publicInfo.currentTurn + 1];
@@ -481,26 +478,37 @@ var discardTile = (pid, gameState, tileToDiscard) => {
 };
 
 var emptyAction = () => {
-	pid: null,
-		tileGroupForAction: null,
-}
+  return {
+    pid: null,
+    tileGroupForAction: null,
+  };
+};
 
-var groupTypeComparator = (typeA, typeB) => {
-
-}
+var typeToPriority = type => {
+  switch (type) {
+    case 'win':
+      return 0;
+    case 'pung':
+      return 1;
+    case 'kong':
+      return 1;
+    case 'chow':
+      return 0;
+  }
+};
 
 var actionComparator = (actionA, actionB, publicInfo) => {
-	if(actionA.tileGroupForAction.type)
-}
+  if (actionA.tileGroupForAction.type) {
+  }
+};
 
-var actionPrioritiser(requestedAction, currentActionsList) => {
-	if(currentActionsList.length == 0){
-		return [requestedAction,];
-	}
-	for (otherAction of currentActionsList) {
-
-	}
-}
+var actionPrioritiser = (requestedAction, currentActionsList) => {
+  if (currentActionsList.length == 0) {
+    return [requestedAction];
+  }
+  for (otherAction of currentActionsList) {
+  }
+};
 
 var requestExposed = (pid, gameState) => {
   console.log(pid + 'called requestExposed');

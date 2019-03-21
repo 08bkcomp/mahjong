@@ -14,11 +14,11 @@ var winds = {
   north: '\u{1F003}',
 };
 
-var pieceback = '\u{1F02B}';
+var tileback = '\u{1F02B}';
 
-function Piece(props) {
+function Tile(props) {
   var comment = props.comment ? props.comment : '';
-  return <div class={props.class}>{comment + props.piece}</div>;
+  return <div class={props.class}>{comment + props.tile}</div>;
 }
 
 function ActionItem(props) {
@@ -33,11 +33,16 @@ function ActionList(props) {
   return (
     <div class="actionlist">
       <ActionItem active={props.actions.draw} action="Draw" />
+      <ActionItem active={props.actions.discard} action="Discard" />
       <ActionItem active={props.actions.chow} action="Chow" />
       <ActionItem active={props.actions.pung} action="Pung" />
       <ActionItem active={props.actions.kong} action="Kong" />
-      <ActionItem active={props.actions.eye} action="Eye (M)" />
-      <ActionItem active={props.actions.rob} action="Rob (M)" />
+      {props.actions.eye ? (
+        <ActionItem active={props.actions.eye} action="Eye (M)" />
+      ) : null}
+      {props.actions.eye ? (
+        <ActionItem active={props.actions.rob} action="Rob (M)" />
+      ) : null}
       <ActionItem active={props.actions.mahjong} action="Mahjong" />
     </div>
   );
@@ -46,31 +51,31 @@ function ActionList(props) {
 function GameInfo(props) {
   return (
     <div class="gameinfo">
-      <Piece
-        class="focuspiece littleinfo"
-        piece={winds[props.publicInfo.round]}
+      <Tile
+        class="focustile littleinfo"
+        tile={winds[props.publicInfo.round]}
         comment="R:"
       />
-      <Piece
-        class="focuspiece littleinfo"
-        piece={winds[props.myGameState.wind]}
+      <Tile
+        class="focustile littleinfo"
+        tile={winds[props.myGameState.wind]}
         comment="P:"
       />
-      <div class="littleinfo">{props.publicInfo.numPiecesLeft}</div>
+      <div class="littleinfo">{props.publicInfo.numTilesLeft}</div>
       <ActionList actions={props.myGameState.actions} />
     </div>
   );
 }
 
 function ExposedGroup(props) {
-  if (props.pieceGroup.isConcealed) {
-    props.pieceGroup.pieces[1] = pieceback;
-    props.pieceGroup.pieces[2] = pieceback;
+  if (props.tileGroup.isConcealed) {
+    props.tileGroup.tiles[1] = tileback;
+    props.tileGroup.tiles[2] = tileback;
   }
   return (
     <div>
-      {props.pieceGroup.pieces.map((piece, i) => {
-        return <Piece class={props.class} piece={piece} />;
+      {props.tileGroup.tiles.map((tile, i) => {
+        return <Tile class={props.class} tile={tile} />;
       })}
     </div>
   );
@@ -79,8 +84,8 @@ function ExposedGroup(props) {
 function ExposedHand(props) {
   return (
     <div class={props.divclass}>
-      {props.exposed.map((pieceGroup, i) => {
-        return <ExposedGroup pieceGroup={pieceGroup} class={props.class} />;
+      {props.exposed.map((tileGroup, i) => {
+        return <ExposedGroup tileGroup={tileGroup} class={props.class} />;
       })}
     </div>
   );
@@ -89,9 +94,9 @@ function ExposedHand(props) {
 function OpHand(props) {
   return (
     <div class="opponent">
-      <div class="opwind otherpiece">{winds[props.wind]}</div>
+      <div class="opwind othertile">{winds[props.wind]}</div>
       <ExposedHand
-        class="otherpiece"
+        class="othertile"
         divclass="ophand"
         exposed={props.exposed}
       />
@@ -105,7 +110,7 @@ function MyHand(props) {
       <Row>
         <Alert variant="warning">
           <ExposedHand
-            class="focuspiece"
+            class="focustile"
             divclass="myexposed"
             exposed={props.exposed}
           />
@@ -114,8 +119,8 @@ function MyHand(props) {
       <Row>
         <Alert variant="info">
           <div class={'myexposed'}>
-            {props.hand.map((piece, i) => {
-              return <Piece class="focuspiece" piece={piece} />;
+            {props.hand.map((tile, i) => {
+              return <Tile class="focustile" tile={tile} />;
             })}
           </div>
         </Alert>
@@ -142,6 +147,21 @@ class Board extends Component {
           myGameState: personalGameState,
           otherExposed: otherExposed,
         });
+        if (myGameState.actions.discard) {
+          // set up listener for number key presses to discard a tile
+		document.addEventListener("keydown", event => {
+			if(event.ctrlKey && ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)) {
+					var index = Number.parseInt(event.key);
+				var index = index == 0 ? 9 : index-1;
+			}
+			if(event.altKey && ['1', '2', '3', '4'].includes(event.key)) {
+				var index = 9 + Number.parseInt(event.key);
+			}
+			if(index < this.state.myGameState.hand.length) {
+				socket.emit('discard tile', index);
+			}
+		});
+        }
       },
     );
   }
@@ -177,8 +197,8 @@ class Board extends Component {
             })}
           </div>
           <div class="discards">
-            {this.state.publicInfo.discards.map((piece, i) => {
-              return <Piece class="focuspiece" piece={piece} />;
+            {this.state.publicInfo.discards.map((tile, i) => {
+              return <Tile class="focustile" tile={tile} />;
             })}
           </div>
           <MyHand
