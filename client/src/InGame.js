@@ -129,24 +129,20 @@ function MyHand(props) {
   );
 }
 
-var setupShortcutsForExposure = tileGroups => {
-  document.addEventListeners();
-};
-
-var ShowExposureOptions = props => {
+function ShowExposureOptions(props) {
   return (
     <Container>
       {props.tileGroups.map((tileGroup, i) => {
         return (
-          <Alert variant={i % 2 == 0 ? "dark" : "light"}>
-            <Badge variant="dark">{i+1}</Badge>
+          <Alert variant={i % 2 == 0 ? 'dark' : 'light'}>
+            <Badge variant="dark">{i + 1}</Badge>
             <ExposedGroup class="focustile" tileGroup={tileGroup} />
           </Alert>
         );
       })}
     </Container>
   );
-};
+}
 
 class Board extends Component {
   constructor(props) {
@@ -233,14 +229,25 @@ class Board extends Component {
       }
       var actionList = this.state.myGameState.actions[type];
       if (actionList.length == 1) {
-        socket.emit('do action', actionList[0]);
+        socket.emit('queue action', actionList[0]);
       } else {
         this.setState({showActions: type});
+      }
+      if (this.state.showActions) {
+        // if we are in here, it means the user is already seeing their action options
+        if (
+          index >= 0 &&
+          index < this.state.myGameState.actions[this.state.showActions].length
+        ) {
+          socket.emit('queue action', actionList[index]);
+          this.setState({showActions: null});
+        }
       }
     });
   }
 
   render() {
+    console.log(this.state);
     if (!this.state.gameLoaded) {
       return (
         <Alert>
@@ -250,12 +257,14 @@ class Board extends Component {
       );
     }
 
-    if (false) {
-      console.log(this.state);
-      return <div>{'game loaded'}</div>;
+    if (this.state.showActions) {
+      return (
+        <ShowExposureOptions
+          tileGroups={this.state.myGameState.actions[this.state.showActions]}
+        />
+      );
     }
 
-    console.log(this.state);
     return (
       <div class="board">
         <GameInfo
