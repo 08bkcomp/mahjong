@@ -294,19 +294,14 @@ io.on('connection', client => {
   });
 });
 
-//io.listen(port);
-//console.log('SOCKET.IO listening on port ', port);
-
 if (process.env.NODE_ENV === 'production') {
   // Serve any static files
-  app.use(express.static(path.join(__dirname, 'client/public')));
+  app.use(express.static(path.join(__dirname, 'client/build')));
   // Handle React routing, return all requests to React app
   app.get('*', function(req, res) {
-    res.sendFile(path.join(__dirname, 'client/public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   });
 }
-//app.listen(port, () => console.log(`Listening on port ${port}`));
-
 // Starts the server.
 server.listen(port, function() {
   console.log('Starting server on port 5000');
