@@ -1,9 +1,13 @@
 const express = require('express');
 const path = require('path');
+const bodyParser = require('body-parser');
 const io = require('socket.io')();
 const app = express();
 const port = process.env.PORT || 5000;
 const GameLogic = require('./GameLogic');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 var ongoingGames = {};
 var pidToOngoingGames = {};
