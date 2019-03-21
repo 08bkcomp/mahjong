@@ -65,14 +65,30 @@ var tileback = '\u{1F02B}';
 
 var getNewWall = () => {
   // first add tiles for which there are four copies
-  var fullWall = [...bamboo, ...characters, ...dots];
-  fullWall = [...fullWall, ...Object.values(dragons)];
-  fullWall = [...fullWall, ...Object.values(winds)];
-  fullWall = [...fullWall, ...fullWall, ...fullWall, ...fullWall];
-  // now add tiles for which there are only one each
-  fullWall = [...fullWall, ...Object.values(seasons)];
-  fullWall = [...fullWall, ...Object.values(flowers)];
-  return fullWall;
+  return [
+    ...bamboo,
+    ...bamboo,
+    ...bamboo,
+    ...bamboo,
+    ...characters,
+    ...characters,
+    ...characters,
+    ...characters,
+    ...dots,
+    ...dots,
+    ...dots,
+    ...dots,
+    ...Object.values(dragons),
+    ...Object.values(dragons),
+    ...Object.values(dragons),
+    ...Object.values(dragons),
+    ...Object.values(winds),
+    ...Object.values(winds),
+    ...Object.values(winds),
+    ...Object.values(winds),
+    ...Object.values(seasons),
+    ...Object.values(flowers),
+  ];
 };
 
 var emptyGame = () => {

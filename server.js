@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const socketIO = require('socket.io');
 const port = process.env.PORT || 5000;
 const GameLogic = require('./GameLogic');
+const fs = require('fs');
 
 var app = express();
 var server = http.Server(app);
@@ -19,6 +20,7 @@ var pidToName = {};
 var nameToPid = {};
 var partialGames = {};
 var lobbyInfo = {players: pidToName, games: partialGames};
+var spareGame;
 
 var distributeGameState = gameName => {
   var roomName = 'gameName:' + gameName;
@@ -208,61 +210,36 @@ io.on('connection', client => {
       console.log(
         `length of wall: ${ongoingGames[gameName].privateInfo.wall.length}`,
       );
-      setTimeout(() => {
-        console.log('after 1ms ------------');
-        for (gameName in ongoingGames) {
-          console.log(`check status of ${gameName}`);
-          console.log(
-            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-              ongoingGames[gameName].privateInfo,
-            )}`,
-          );
-        }
-      }, 1);
-      setTimeout(() => {
-        console.log('after 10ms ------------');
-        for (gameName in ongoingGames) {
-          console.log(`check status of ${gameName}`);
-          console.log(
-            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-              ongoingGames[gameName].privateInfo,
-            )}`,
-          );
-        }
-      }, 10);
-      setTimeout(() => {
-        console.log('after 100ms ------------');
-        for (gameName in ongoingGames) {
-          console.log(`check status of ${gameName}`);
-          console.log(
-            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-              ongoingGames[gameName].privateInfo,
-            )}`,
-          );
-        }
-      }, 100);
-      setTimeout(() => {
-        console.log('after 1s ------------');
-        for (gameName in ongoingGames) {
-          console.log(`check status of ${gameName}`);
-          console.log(
-            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-              ongoingGames[gameName].privateInfo,
-            )}`,
-          );
-        }
-      }, 1000);
-      setTimeout(() => {
-        console.log('after 3s ------------');
-        for (gameName in ongoingGames) {
-          console.log(`check status of ${gameName}`);
-          console.log(
-            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-              ongoingGames[gameName].privateInfo,
-            )}`,
-          );
-        }
-      }, 3000);
+      fs.writeFileSync(
+        '../tests/test00.json',
+        JSON.stringify(ongoingGames[gameName]),
+      );
+      var timeOutFn = timeMs => {
+        return () => {
+          console.log(`after ${timeMs}ms ------------`);
+          for (gameName in ongoingGames) {
+            console.log(
+              `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+                ongoingGames[gameName].privateInfo,
+              )}`,
+            );
+            fs.writeFileSync(
+              `../tests/test${timeMs}.json`,
+              JSON.stringify(ongoingGames[gameName]),
+            );
+          }
+        };
+      };
+      var testFn = timeMs => {
+        setTimeout(timeOutFn(timeMs), timeMs);
+      };
+      testFn(0);
+      testFn(1);
+      testFn(10);
+      testFn(100);
+      testFn(1000);
+      testFn(3000);
+      //hello
     }
   });
   //=====================================================
