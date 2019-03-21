@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import Alert from 'react-bootstrap/Alert';
 import './InGame.css';
 import './index.css';
-import socket from './socket';
+//import socket from './socket';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';

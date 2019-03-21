@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import socket from './socket';
+//import socket from './socket';
 
 let handleClick;
 let handleNameChange;
