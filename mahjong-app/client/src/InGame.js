@@ -153,36 +153,49 @@ class Board extends Component {
     );
     // set up listener for number key presses to discard a tile
     document.addEventListener('keydown', event => {
+      console.log(`pressed key: ${event.key}`);
+      // =========================================
+      //  handler for discarding a tile
+      // =========================================
+      var index = -1;
       if (
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)
       ) {
-        var index = Number.parseInt(event.key);
-        var index = index == 0 ? 9 : index - 1;
-        //console.log('number between 1 and 10, the index is ' + index);
-        if (
-          index < this.state.myGameState.hand.length &&
-          this.state.myGameState.actions.discard
-        ) {
-          socket.emit('discard tile', index);
-          //console.log('index less than hand');
-        }
+        index = Number.parseInt(event.key);
+        index = index == 0 ? 9 : index - 1;
+        console.log('number between 1 and 10, the index is ' + index);
       }
       switch (event.key) {
         case '-':
-          var index = 10;
+          index = 10;
+          break;
         case '=':
-          var index = 11;
+          index = 11;
+          break;
         case '[':
-          var index = 12;
+          index = 12;
+          break;
         case ']':
-          var index = 13;
-          if (
-            index < this.state.myGameState.hand.length &&
-            this.state.myGameState.actions.discard
-          ) {
-            socket.emit('discard tile', index);
-            break;
-          }
+          index = 13;
+          break;
+      }
+      if (
+        index >= 0 &&
+        index < this.state.myGameState.hand.length &&
+        this.state.myGameState.actions.discard
+      ) {
+        console.log(
+          `sent index:${index} less than hand:${
+            this.state.myGameState.hand.length
+          }`,
+        );
+        socket.emit('discard tile', index);
+      }
+      // =========================================
+      //  handler for drawing a tile
+      // =========================================
+      if (event.key == 'd' && this.state.myGameState.actions.draw) {
+        socket.emit('draw tile');
       }
     });
   }

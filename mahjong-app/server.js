@@ -12,7 +12,7 @@ var nameToPid = {};
 var partialGames = {};
 var lobbyInfo = {players: pidToName, games: partialGames};
 
-function distributeGameState(gameName, gameState) {
+var distributeGameState = gameName => {
   var roomName = 'gameName:' + gameName;
   io.of('/')
     .in(roomName)
@@ -32,10 +32,20 @@ function distributeGameState(gameName, gameState) {
         });
       }
     });
-}
+};
+
+//setInterval(() => {
+//  for (gameName in ongoingGames) {
+//    console.log(`check status of ${gameName}`);
+//    console.log(
+//      `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+//        ongoingGames[gameName].privateInfo,
+//      )}`,
+//    );
+//  }
+//}, 3000);
 
 io.on('connection', client => {
-  console.log('new player connected: ' + client.id);
   //================================================
   //Recieved from user creation (home)
   //================================================
@@ -162,21 +172,16 @@ io.on('connection', client => {
       // also need to move client, who we note was never in the gameroom of their owned game
       client.leave('lobby');
       client.join(roomName);
-      io.of('/')
-        .in(roomName)
-        .clients(function(error, clients) {
-          if (clients.length > 0) {
-            clients.forEach(function(socket_id) {
-              console.log(pidToName[socket_id] + ' is in room ' + roomName);
-            });
-          }
-        });
       //now we tell all clients for this game to move to the game board (shows loading)
       io.to(roomName).emit('send users to game board');
       // then create a fresh game for them, init by the GameLogic
       ongoingGames[gameName] = GameLogic.initGameState(curPlayers);
-      // console.log('============CREATED THE FOLLOWING GAME FOR '+gameName);
-      // console.log(ongoingGames[gameName].publicInfo);
+      console.log('INSIDE SERVER: init game');
+      console.log(
+        `ongoingGames[gameName].privateInfo: ${Object.keys(
+          ongoingGames[gameName].privateInfo,
+        )}`,
+      );
       // then put the pid -> gameName mappings into memory
       for (pid of curPlayers) {
         pidToOngoingGames[pid] = gameName;
@@ -185,16 +190,93 @@ io.on('connection', client => {
       delete partialGames[gameName];
       io.to('lobby').emit('load games', partialGames);
       //now we give the starting info of the game to the people in it
-	    distributeGameState(gameName);
+      distributeGameState(gameName);
+      console.log('INSIDE SERVER: init game, after distribution');
+      console.log(
+        `ongoingGames[${gameName}].privateInfo: ${Object.keys(
+          ongoingGames[gameName].privateInfo,
+        )}`,
+      );
+      console.log(
+        `length of wall: ${ongoingGames[gameName].privateInfo.wall.length}`,
+      );
+      setTimeout(() => {
+        console.log('after 1ms ------------');
+        for (gameName in ongoingGames) {
+          console.log(`check status of ${gameName}`);
+          console.log(
+            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+              ongoingGames[gameName].privateInfo,
+            )}`,
+          );
+        }
+      }, 1);
+      setTimeout(() => {
+        console.log('after 10ms ------------');
+        for (gameName in ongoingGames) {
+          console.log(`check status of ${gameName}`);
+          console.log(
+            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+              ongoingGames[gameName].privateInfo,
+            )}`,
+          );
+        }
+      }, 10);
+      setTimeout(() => {
+        console.log('after 100ms ------------');
+        for (gameName in ongoingGames) {
+          console.log(`check status of ${gameName}`);
+          console.log(
+            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+              ongoingGames[gameName].privateInfo,
+            )}`,
+          );
+        }
+      }, 100);
+      setTimeout(() => {
+        console.log('after 1s ------------');
+        for (gameName in ongoingGames) {
+          console.log(`check status of ${gameName}`);
+          console.log(
+            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+              ongoingGames[gameName].privateInfo,
+            )}`,
+          );
+        }
+      }, 1000);
+      setTimeout(() => {
+        console.log('after 3s ------------');
+        for (gameName in ongoingGames) {
+          console.log(`check status of ${gameName}`);
+          console.log(
+            `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
+              ongoingGames[gameName].privateInfo,
+            )}`,
+          );
+        }
+      }, 3000);
     }
   });
   //=====================================================
   //Recieved from the overall game board
   //=====================================================
   client.on('discard tile', tileIndex => {
-    gameState = ongoingGames[pidToOngoingGames[client.id]];
-    gameState = GameLogic.discardTile(client.id, gameState);
     var gameName = pidToOngoingGames[client.id];
+    console.log('INSIDE SERVER: discard tile');
+    console.log(
+      `ongoingGames[${gameName}].privateInfo: ${Object.keys(
+        ongoingGames[gameName].privateInfo,
+      )}`,
+    );
+    gameState = ongoingGames[gameName];
+    gameState = GameLogic.discardTile(client.id, gameState, tileIndex);
+    ongoingGames[gameName] = gameState;
+    distributeGameState(gameName);
+  });
+  client.on('draw tile', () => {
+    var gameName = pidToOngoingGames[client.id];
+    gameState = ongoingGames[gameName];
+    gameState = GameLogic.drawTile(client.id, gameState);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   });

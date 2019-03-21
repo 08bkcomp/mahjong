@@ -84,7 +84,7 @@ var emptyGame = () => {
       currentTurn: null,
       admin: null,
     },
-    private: {
+    privateInfo: {
       wall: null,
     },
   };
@@ -210,38 +210,40 @@ var initAdmin = players => {
 };
 
 initGameState = players => {
-  var game = emptyGame();
+  var gameState = emptyGame();
 
-  game.publicInfo.round = shuffle(['east', 'south', 'west', 'north'])[0];
-  game.publicInfo.discards = [];
-  game.publicInfo.currentTurn = 0;
-  game.publicInfo.admin = initAdmin(players);
+  gameState.publicInfo.round = shuffle(['east', 'south', 'west', 'north'])[0];
+  gameState.publicInfo.discards = [];
+  gameState.publicInfo.currentTurn = 0;
+  gameState.publicInfo.admin = initAdmin(players);
 
-  game.private.wall = shuffle(getNewWall());
+  gameState.privateInfo.wall = shuffle(getNewWall());
 
   for (i = 0; i < players.length; i++) {
     var pid = players[i];
-    game[pid] = emptyPersonalGame();
+    gameState[pid] = emptyPersonalGame();
 
-    game[pid].wind = game.publicInfo.admin.pidToWind[pid];
-    game[pid].order = game.publicInfo.admin.pidToOrder[pid];
-    game[pid].hand = [];
-    game[pid].exposed = [];
+    gameState[pid].wind = gameState.publicInfo.admin.pidToWind[pid];
+    gameState[pid].order = gameState.publicInfo.admin.pidToOrder[pid];
+    gameState[pid].hand = [];
+    gameState[pid].exposed = [];
 
-    var startHandSize = game[pid].order == 0 ? 14 : 13;
-    while (game[pid].hand.length < startHandSize) {
-      var newTile = game.private.wall.pop();
+    var startHandSize = gameState[pid].order == 0 ? 14 : 13;
+    while (gameState[pid].hand.length < startHandSize) {
+      var newTile = gameState.privateInfo.wall.pop();
       if (isBonus(newTile)) {
-        game[pid].exposed.push(tileGroup([newTile], 'bonus', false));
+        gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
       } else {
-        game[pid].hand.push(newTile);
+        gameState[pid].hand.push(newTile);
       }
     }
-    game[pid].hand.sort();
-    game[pid].actions.discard = game[pid].order == 0;
+    gameState[pid].hand.sort();
+    gameState[pid].actions.discard = gameState[pid].order == 0;
   }
-  game.publicInfo.numTilesLeft = game.private.wall.length;
-  return game;
+  gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
+  console.log('AFTER INIT GAME');
+  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
+  return gameState;
 };
 
 var isKong = tiles => {
@@ -397,12 +399,15 @@ var wipeActions = gameState => {
 var drawTile = (pid, gameState) => {
   // first check the user is allowed to draw
   if (!gameState[pid].actions.draw) {
-    return null;
+    return gameState;
   }
   // firstly wipe all actions, as the prev discard is now dead
+  console.log(`gameState.privateInfo: ${gameState.privateInfo}`);
   gameState = wipeActions(gameState);
+  console.log('ACTIONS WIPED');
+  console.log(`gameState.privateInfo: ${gameState.privateInfo}`);
   do {
-    var newTile = gameState.private.wall.pop();
+    var newTile = gameState.privateInfo.wall.pop();
     if (isBonus(newTile)) {
       gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
     } else {
@@ -421,7 +426,7 @@ var drawTile = (pid, gameState) => {
       gameState[pid].hand.push(newTile);
     }
   } while (isBonus(newTile));
-  gameState.publicInfo.numTilesLeft = gameState.private.wall.length;
+  gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
   return gameState;
 };
 
@@ -452,9 +457,10 @@ var updateActionsOnDiscard = (
 
 var discardTile = (pid, gameState, tileIndex) => {
   console.log('DISCARD TILE AT INDEX: ' + tileIndex);
+  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
   //first check the user can discard
   if (!gameState[pid].actions.discard) {
-    return null;
+    return gameState;
   }
   // now update the actions for the discarding player
   for (action in gameState[pid].actions) {
@@ -463,6 +469,11 @@ var discardTile = (pid, gameState, tileIndex) => {
   // and remove the tile from the discarding player's hand
   var tileToDiscard = gameState[pid].hand[tileIndex];
   gameState[pid].hand.splice(tileIndex, 1);
+  // and add it to list of discards
+  gameState.publicInfo.discards = [
+    ...gameState.publicInfo.discards,
+    tileToDiscard,
+  ];
   // now we need to update everyone elses options
   var nextPlayerPid =
     gameState.publicInfo.admin.orderToPid[gameState.publicInfo.currentTurn + 1];
@@ -475,6 +486,8 @@ var discardTile = (pid, gameState, tileIndex) => {
       );
     }
   }
+  console.log('AFTER DISCARD PROCESS');
+  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
   return gameState;
 };
 
@@ -545,6 +558,14 @@ var doAction = (action, gameState) => {
       ...gameState[pid].exposed,
       action.tileGroupForAction,
     ];
+    // now we must remove the tiles from play. note at this stage, if the
+    // action is off of a discard, the discarded tile is at the end of
+    // the discards array, NOT in the action player's hand, so we must pop
+    // that tile also
+    var isOffDiscard = !action.tileGroupForAction.isConcealed;
+    if (isOffDiscard) {
+      gameState.publicInfo.discards.pop();
+    }
     for (tile of action.tileGroupForAction.tiles) {
       gameState[pid].hand.splice(gameState[pid].hand.indexOf(tile), 1);
     }
@@ -553,16 +574,13 @@ var doAction = (action, gameState) => {
 };
 
 var requestExposed = (pid, gameState) => {
-  console.log(pid + 'called requestExposed');
-  delete gameState.private.wall;
+  delete gameState.privateInfo.wall;
   var otherExposed = {};
   for (i = 0; i < gameState.publicInfo.admin.numPlayers; i++) {
     otherPid = gameState.publicInfo.admin.playerPids[i];
-    console.log('otherPid is ' + otherPid);
     if (pid != otherPid) {
       otherExposed[gameState[otherPid].wind] = gameState[otherPid].exposed;
     } else {
-      console.log('this is the same as user pid');
     }
   }
   return otherExposed;
