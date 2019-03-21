@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Redirect} from 'react-router-dom';
-//import socket from './socket';
+import socket from './socket';
 import PlayerList from './LobbyPlayerList';
 import GameList from './LobbyGameList';
 import CreateGame from './LobbyCreateGame';
