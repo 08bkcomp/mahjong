@@ -182,65 +182,38 @@ io.on('connection', client => {
       // also need to move client, who we note was never in the gameroom of their owned game
       client.leave('lobby');
       client.join(roomName);
+
       //now we tell all clients for this game to move to the game board (shows loading)
       io.to(roomName).emit('send users to game board');
+
       // then create a fresh game for them, init by the GameLogic
       ongoingGames[gameName] = GameLogic.initGameState(curPlayers);
-      console.log('INSIDE SERVER: init game');
-      console.log(
-        `ongoingGames[gameName].privateInfo: ${Object.keys(
-          ongoingGames[gameName].privateInfo,
-        )}`,
-      );
+      ongoingGames[gameName][`newWall`] =
+        ongoingGames[gameName].privateInfo.wall;
+
       // then put the pid -> gameName mappings into memory
       for (pid of curPlayers) {
         pidToOngoingGames[pid] = gameName;
       }
+
       // then delete the partial game and tell the lobby to remove it
       delete partialGames[gameName];
       io.to('lobby').emit('load games', partialGames);
-      //now we give the starting info of the game to the people in it
+
+      // now we give the starting info of the game to the people in it
       distributeGameState(gameName);
-      console.log('INSIDE SERVER: init game, after distribution');
-      console.log(
-        `ongoingGames[${gameName}].privateInfo: ${Object.keys(
-          ongoingGames[gameName].privateInfo,
-        )}`,
-      );
-      console.log(
-        `length of wall: ${ongoingGames[gameName].privateInfo.wall.length}`,
-      );
+
+      // we write inside the if statement
       fs.writeFileSync(
-        '../tests/test00.json',
+        '../tests/InsideIf.json',
         JSON.stringify(ongoingGames[gameName]),
       );
-      var timeOutFn = timeMs => {
-        return () => {
-          console.log(`after ${timeMs}ms ------------`);
-          for (gameName in ongoingGames) {
-            console.log(
-              `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-                ongoingGames[gameName].privateInfo,
-              )}`,
-            );
-            fs.writeFileSync(
-              `../tests/test${timeMs}.json`,
-              JSON.stringify(ongoingGames[gameName]),
-            );
-          }
-        };
-      };
-      var testFn = timeMs => {
-        setTimeout(timeOutFn(timeMs), timeMs);
-      };
-      testFn(0);
-      testFn(1);
-      testFn(10);
-      testFn(100);
-      testFn(1000);
-      testFn(3000);
-      //hello
     }
+    // we write outisde the if statement
+    fs.writeFileSync(
+      '../tests/OutOfIf.json',
+      JSON.stringify(ongoingGames[gameName]),
+    );
   });
   //=====================================================
   //Recieved from the overall game board
@@ -251,6 +224,11 @@ io.on('connection', client => {
     console.log(
       `ongoingGames[${gameName}].privateInfo: ${Object.keys(
         ongoingGames[gameName].privateInfo,
+      )}`,
+    );
+    console.log(
+      `Keys of ongoingGames[${gameName}]: ${Object.keys(
+        ongoingGames[gameName],
       )}`,
     );
     gameState = ongoingGames[gameName];
