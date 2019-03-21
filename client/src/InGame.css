@@ -55,6 +55,7 @@ html,body,#root {
 
 .discards {
 		flex: 1;
+		font-size: 2.5em;
 }
 
 .myfullhand {

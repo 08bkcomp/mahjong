@@ -89,7 +89,6 @@ export default class GameList extends Component {
       });
     });
     socket.on('disable join games', () => {
-      alert('disabling joining games');
       this.setState({hasOwnGame: true});
     });
     socket.on('enable join games', () => {

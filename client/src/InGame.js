@@ -129,6 +129,25 @@ function MyHand(props) {
   );
 }
 
+var setupShortcutsForExposure = tileGroups => {
+  document.addEventListeners();
+};
+
+var ShowExposureOptions = props => {
+  return (
+    <Container>
+      {props.tileGroups.map((tileGroup, i) => {
+        return (
+          <Alert variant={i % 2 == 0 ? "dark" : "light"}>
+            <Badge variant="dark">{i+1}</Badge>
+            <ExposedGroup class="focustile" tileGroup={tileGroup} />
+          </Alert>
+        );
+      })}
+    </Container>
+  );
+};
+
 class Board extends Component {
   constructor(props) {
     super(props);
@@ -142,6 +161,7 @@ class Board extends Component {
       'reload game state',
       (publicInfo, personalGameState, otherExposed) => {
         this.setState({
+          showActions: null,
           gameLoaded: true,
           publicInfo: publicInfo,
           myGameState: personalGameState,
@@ -197,6 +217,26 @@ class Board extends Component {
       if (event.key == 'd' && this.state.myGameState.actions.draw) {
         socket.emit('draw tile');
       }
+      // =========================================
+      //  handler for actions
+      // =========================================
+      switch (event.key) {
+        case 'c':
+          var type = 'chow';
+          break;
+        case 'p':
+          var type = 'pung';
+          break;
+        case 'k':
+          var type = 'kong';
+          break;
+      }
+      var actionList = this.state.myGameState.actions[type];
+      if (actionList.length == 1) {
+        socket.emit('do action', actionList[0]);
+      } else {
+        this.setState({showActions: type});
+      }
     });
   }
 
@@ -232,7 +272,8 @@ class Board extends Component {
           </div>
           <div class="discards">
             {this.state.publicInfo.discards.map((tile, i) => {
-              return <Tile class="focustile" tile={tile} />;
+              return tile;
+              // return <Tile class="focustile" tile={tile} />;
             })}
           </div>
           <MyHand

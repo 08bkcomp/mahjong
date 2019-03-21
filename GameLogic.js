@@ -257,8 +257,6 @@ initGameState = players => {
     gameState[pid].actions.discard = gameState[pid].order == 0;
   }
   gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
-  console.log('AFTER INIT GAME');
-  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
   return gameState;
 };
 
@@ -418,10 +416,7 @@ var drawTile = (pid, gameState) => {
     return gameState;
   }
   // firstly wipe all actions, as the prev discard is now dead
-  console.log(`gameState.privateInfo: ${gameState.privateInfo}`);
   gameState = wipeActions(gameState);
-  console.log('ACTIONS WIPED');
-  console.log(`gameState.privateInfo: ${gameState.privateInfo}`);
   do {
     var newTile = gameState.privateInfo.wall.pop();
     if (isBonus(newTile)) {
@@ -439,7 +434,7 @@ var drawTile = (pid, gameState) => {
         false,
       );
       // now we can add the tile to the hand, since actions have been recalculated
-      gameState[pid].hand.push(newTile);
+      gameState[pid].hand = [newTile, ...gameState[pid].hand];
     }
   } while (isBonus(newTile));
   gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
@@ -471,39 +466,56 @@ var updateActionsOnDiscard = (
   return personalGameState;
 };
 
+var nextOrder = gameState => {
+  return (
+    (gameState.publicInfo.currentTurn + 1) % gameState.publicInfo.admin.numPlayers
+  );
+};
+
+var incrementCurrentTurn = gameState => {
+  console.log(`prev curTurn: ${gameState.publicInfo.currentTurn}`);
+  gameState.publicInfo.currentTurn = nextOrder(gameState);
+  console.log(`new curTurn: ${gameState.publicInfo.currentTurn}`);
+  return gameState;
+};
+
 var discardTile = (pid, gameState, tileIndex) => {
-  console.log('DISCARD TILE AT INDEX: ' + tileIndex);
-  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
   //first check the user can discard
   if (!gameState[pid].actions.discard) {
     return gameState;
   }
-  // now update the actions for the discarding player
-  for (action in gameState[pid].actions) {
-    gameState[pid].actions[action] = false;
-  }
+  // now wip actions (cur player can do nothing, others will be recalc)
+  gameState = wipeActions(gameState);
+
+	// and resort their hand
+	gameState[pid].hand.sort();
+
   // and remove the tile from the discarding player's hand
   var tileToDiscard = gameState[pid].hand[tileIndex];
   gameState[pid].hand.splice(tileIndex, 1);
+
   // and add it to list of discards
   gameState.publicInfo.discards = [
     ...gameState.publicInfo.discards,
     tileToDiscard,
   ];
+
+  // now we move the turn counter up one
+  gameState = incrementCurrentTurn(gameState);
+
   // now we need to update everyone elses options
-  var nextPlayerPid =
-    gameState.publicInfo.admin.orderToPid[gameState.publicInfo.currentTurn + 1];
   for (otherPid of gameState.publicInfo.admin.playerPids) {
+    var isNextPlayer =
+      gameState.publicInfo.admin.pidToOrder[otherPid] ==
+      gameState.publicInfo.currentTurn;
     if (otherPid != pid) {
       gameState[otherPid] = updateActionsOnDiscard(
         gameState[otherPid],
         tileToDiscard,
-        otherPid == nextPlayerPid,
+        isNextPlayer,
       );
     }
   }
-  console.log('AFTER DISCARD PROCESS');
-  console.log(`gameState.privateInfo: ${Object.keys(gameState.privateInfo)}`);
   return gameState;
 };
 
@@ -590,7 +602,6 @@ var doAction = (action, gameState) => {
 };
 
 var requestExposed = (pid, gameState) => {
-  delete gameState.privateInfo.wall;
   var otherExposed = {};
   for (i = 0; i < gameState.publicInfo.admin.numPlayers; i++) {
     otherPid = gameState.publicInfo.admin.playerPids[i];
