@@ -3,7 +3,7 @@ const path = require('path');
 const io = require('socket.io')();
 const app = express();
 const port = process.env.PORT || 5000;
-const GameLogic =  require('./GameLogic');
+const GameLogic = require('./GameLogic');
 
 var ongoingGames = {};
 var pidToOngoingGames = {};
@@ -12,16 +12,22 @@ var nameToPid = {};
 var partialGames = {};
 var lobbyInfo = {players: pidToName, games: partialGames};
 
-function distributeGameState(gamename, gameState) {
-  var room = 'gamename:' + gamename;
+function distributeGameState(gameName, gameState) {
+  var room = 'gameName:' + gameName;
   io.of('/')
-    .in(room)
-    .clients(function(error, clients) {
+    .in(roomName)
+    .clients((error, clients) => {
       if (clients.length > 0) {
         clients.forEach(function(socket_id) {
+          var otherExposed = GameLogic.requestExposed(
+            socket_id,
+            ongoingGames[gameName],
+          );
           io.sockets.sockets[socket_id].emit(
-            'update game board',
-            gameState[socket_id],
+            'reload game state',
+            ongoingGames[gameName].publicInfo,
+            ongoingGames[gameName][socket_id],
+            otherExposed,
           );
         });
       }
@@ -65,34 +71,34 @@ io.on('connection', client => {
     client.emit('load games', partialGames);
     console.log(client.id + ' loaded game list');
   });
-  client.on('join game', gamename => {
-    var enoughPlayers = partialGames[gamename].players.length == 4;
+  client.on('join game', gameName => {
+    var enoughPlayers = partialGames[gameName].players.length == 4;
     if (enoughPlayers) {
       client.emit('game is full');
     } else {
-      var newGameInfo = partialGames[gamename];
+      var newGameInfo = partialGames[gameName];
       newGameInfo.players.push(client.id);
       newGameInfo.playerNames.push(pidToName[client.id]);
-      partialGames[gamename] = newGameInfo;
+      partialGames[gameName] = newGameInfo;
       io.to(newGameInfo.owner).emit('update created game', newGameInfo);
-      client.emit('confirm game joined', gamename, newGameInfo);
+      client.emit('confirm game joined', gameName, newGameInfo);
       client.emit('disable create game');
-      client.to('gamename:' + gamename).emit('update joined game', newGameInfo);
-      client.join('gamename:' + gamename);
+      client.to('gameName:' + gameName).emit('update joined game', newGameInfo);
+      client.join('gameName:' + gameName);
       client.to('lobby').emit('load games', partialGames);
     }
   });
-  client.on('leave game', gamename => {
+  client.on('leave game', gameName => {
     console.log('BEFORE---------------------');
-    var newGameInfo = partialGames[gamename];
-    console.log(partialGames[gamename]);
+    var newGameInfo = partialGames[gameName];
+    console.log(partialGames[gameName]);
     newGameInfo.players.splice(newGameInfo.players.indexOf(client.id), 1);
     newGameInfo.playerNames.splice(
       newGameInfo.playerNames.indexOf(pidToName[client.id]),
       1,
     );
-    partialGames[gamename] = newGameInfo;
-    console.log(partialGames[gamename]);
+    partialGames[gameName] = newGameInfo;
+    console.log(partialGames[gameName]);
     io.to(newGameInfo.owner).emit('update created game', newGameInfo);
     client.emit('confirm game left', partialGames);
     client.emit('enable create game');
@@ -101,24 +107,24 @@ io.on('connection', client => {
   //================================================
   //Recieved from create game area
   //================================================
-  client.on('create game', gamename => {
-    if (gamename in partialGames || gamename in ongoingGames) {
-      client.emit('invalid gamename');
-      console.log(client.id + ' tried to use gamename ' + gamename);
+  client.on('create game', gameName => {
+    if (gameName in partialGames || gameName in ongoingGames) {
+      client.emit('invalid gameName');
+      console.log(client.id + ' tried to use gameName ' + gameName);
     } else {
-      partialGames[gamename] = {
+      partialGames[gameName] = {
         players: [client.id],
         playerNames: [pidToName[client.id]],
         owner: client.id,
       };
-      client.emit('confirm game created', partialGames[gamename]);
+      client.emit('confirm game created', partialGames[gameName]);
       client.emit('disable join games');
       client.to('lobby').emit('load games', partialGames);
     }
   });
-  client.on('delete game', gamename => {
-    if (partialGames[gamename].owner == client.id) {
-      var gameroom = 'gamename:' + gamename;
+  client.on('delete game', gameName => {
+    if (partialGames[gameName].owner == client.id) {
+      var gameroom = 'gameName:' + gameName;
       io.to(gameroom).emit('force leave game');
       io.to(gameroom).emit('enable create game');
       io.of('/')
@@ -132,17 +138,17 @@ io.on('connection', client => {
             });
           }
         });
-      delete partialGames[gamename];
+      delete partialGames[gameName];
       client.emit('confirm game deleted');
       client.emit('enable join games');
       client.to('lobby').emit('load games', partialGames);
     }
   });
-  client.on('start game', gamename => {
-    if (partialGames[gamename].owner == client.id) {
-      console.log('START GAME: ' + gamename);
-	    var roomName = 'gamename:'+gamename;
-      var curPlayers = partialGames[gamename].players;
+  client.on('start game', gameName => {
+    if (partialGames[gameName].owner == client.id) {
+      console.log('START GAME: ' + gameName);
+      var roomName = 'gameName:' + gameName;
+      var curPlayers = partialGames[gameName].players;
       //firstly we move people into/out of the correct rooms
       io.of('/')
         .in(roomName)
@@ -161,57 +167,41 @@ io.on('connection', client => {
         .clients(function(error, clients) {
           if (clients.length > 0) {
             clients.forEach(function(socket_id) {
-		    console.log(pidToName[socket_id] + ' is in room '+roomName)
+              console.log(pidToName[socket_id] + ' is in room ' + roomName);
             });
           }
         });
       //now we tell all clients for this game to move to the game board (shows loading)
       io.to(roomName).emit('send users to game board');
       // then create a fresh game for them, init by the GameLogic
-      ongoingGames[gamename] = GameLogic.initGameState(curPlayers);
-	   // console.log('============CREATED THE FOLLOWING GAME FOR '+gamename);
-	   // console.log(ongoingGames[gamename].publicInfo);
-      // then put the pid -> gamename mappings into memory
+      ongoingGames[gameName] = GameLogic.initGameState(curPlayers);
+      // console.log('============CREATED THE FOLLOWING GAME FOR '+gameName);
+      // console.log(ongoingGames[gameName].publicInfo);
+      // then put the pid -> gameName mappings into memory
       for (pid of curPlayers) {
-        pidToOngoingGames[pid] = gamename;
+        pidToOngoingGames[pid] = gameName;
       }
       // then delete the partial game and tell the lobby to remove it
-      delete partialGames[gamename];
+      delete partialGames[gameName];
       io.to('lobby').emit('load games', partialGames);
       //now we give the starting info of the game to the people in it
-      io.of('/')
-        .in(roomName)
-        .clients(function(error, clients) {
-          if (clients.length > 0) {
-            clients.forEach(function(socket_id) {
-              var otherExposed = GameLogic.requestExposed(
-                socket_id,
-                ongoingGames[gamename],
-              );
-		    console.log('otherExposed sent to '+pidToName[socket_id] + 'is\n' + otherExposed);
-              io.sockets.sockets[socket_id].emit(
-                'reload game state',
-                ongoingGames[gamename].publicInfo,
-                ongoingGames[gamename][socket_id],
-                otherExposed
-              );
-            });
-          }
-        });
+	    distributeGameState(gameName);
     }
   });
   //=====================================================
   //Recieved from the overall game board
   //=====================================================
-	socket.on('discard tile', tileIndex => {
-		gameState = ongoingGames[pidToOngoingGames[socket.id]];
-
-	});
+  socket.on('discard tile', tileIndex => {
+    gameState = ongoingGames[pidToOngoingGames[socket.id]];
+    gameState = GameLogic.discardTile(socket.id, gameState);
+    var gameName = pidToOngoingGames[socket.id];
+    ongoingGames[gameName] = gameState;
+    distributeGameState(gameName);
+  });
 
   client.on('disconnect', () => {
     console.log('player disconnected: ' + client.id);
   });
-
 });
 
 io.listen(port);

@@ -127,7 +127,7 @@ var tileGroup = (tiles, type, isConcealed) => {
   };
 };
 
-function shuffle(array) {
+var shuffle = array => {
   var m = array.length,
     t,
     i;
@@ -231,8 +231,6 @@ initGameState = players => {
     var startHandSize = game[pid].order == 0 ? 14 : 13;
     while (game[pid].hand.length < startHandSize) {
       var newTile = game.private.wall.pop();
-      game.publicInfo.admin.numTilesLeft =
-        game.publicInfo.admin.numTilesLeft - 1;
       if (isBonus(newTile)) {
         game[pid].exposed.push(tileGroup([newTile], 'bonus', false));
       } else {
@@ -242,6 +240,7 @@ initGameState = players => {
     game[pid].hand.sort();
     game[pid].actions.discard = game[pid].order == 0;
   }
+  game.publicInfo.numTilesLeft = game.private.wall.length;
   return game;
 };
 
@@ -422,6 +421,7 @@ var drawTile = (pid, gameState) => {
       gameState[pid].hand.push(newTile);
     }
   } while (isBonus(newTile));
+  gameState.publicInfo.numTilesLeft = gameState.private.wall.length;
   return gameState;
 };
 
@@ -497,17 +497,58 @@ var typeToPriority = type => {
   }
 };
 
+var getRelativisedPidToOrder = publicInfo => {
+  var relPidToOrder = {};
+  for (pid in relPidToOrder) {
+    relPidToOrder[pid] =
+      (publicInfo.admin.pidToOrder[pid] - publicInfo.currentTurn) %
+      publicInfo.numPlayers;
+  }
+  return relPidToOrder;
+};
+
 var actionComparator = (actionA, actionB, publicInfo) => {
-  if (actionA.tileGroupForAction.type) {
+  var typeA = actionA.tileGroupForAction.type;
+  var typeB = actionB.tileGroupForAction.type;
+  var typePriorityA = typeToPriority(typeA);
+  var typePriorityB = typeToPriority(typeB);
+  if (typePriorityA < typePriorityB) {
+    return actionA;
+  } else if (typePriorityA > typePriorityB) {
+    return actionB;
+  } else {
+    var relPidToOrder = getRelativisedPidToOrder(publicInfo);
+    var seatPriorityA = relPidToOrder[actionA.pid];
+    var seatPriorityB = relPidToOrder[actionB.pid];
+    if (seatPriorityA < seatPriorityB) {
+      return actionA;
+    } else if (seatPriorityA > seatPriorityB) {
+      return actionB;
+    }
   }
 };
 
-var actionPrioritiser = (requestedAction, currentActionsList) => {
-  if (currentActionsList.length == 0) {
-    return [requestedAction];
+var doAction = (action, gameState) => {
+  var pid = action.pid;
+  var type = action.tileGroupForAction.type;
+  var setExists = false;
+  for (possTileGroup of gameState[pid].actions[type]) {
+    if (possTileGroup.tiles[0] == action.tileGroupForAction.tiles[0]) {
+      setExists = true;
+    }
   }
-  for (otherAction of currentActionsList) {
+  if (setExists) {
+    gameState = wipeActions(gameState);
+    gameState[pid].actions.discard = true;
+    gameState[pid].exposed = [
+      ...gameState[pid].exposed,
+      action.tileGroupForAction,
+    ];
+    for (tile of action.tileGroupForAction.tiles) {
+      gameState[pid].hand.splice(gameState[pid].hand.indexOf(tile), 1);
+    }
   }
+  return gameState;
 };
 
 var requestExposed = (pid, gameState) => {
