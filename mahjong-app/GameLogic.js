@@ -138,7 +138,7 @@ var shuffle = array => {
     array[i] = t;
   }
   return array;
-}
+};
 
 var arrayCollapse = array => {
   array.sort((a, b) => {
@@ -451,6 +451,7 @@ var updateActionsOnDiscard = (
 };
 
 var discardTile = (pid, gameState, tileIndex) => {
+  console.log('DISCARD TILE AT INDEX: ' + tileIndex);
   //first check the user can discard
   if (!gameState[pid].actions.discard) {
     return null;
@@ -571,4 +572,7 @@ module.exports = {
   initGameState: initGameState,
   requestExposed: requestExposed,
   drawTile: drawTile,
+  discardTile: discardTile,
+  doAction: doAction,
+  actionComparator: actionComparator,
 };

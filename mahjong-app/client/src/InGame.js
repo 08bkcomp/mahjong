@@ -147,23 +147,44 @@ class Board extends Component {
           myGameState: personalGameState,
           otherExposed: otherExposed,
         });
-        if (myGameState.actions.discard) {
-          // set up listener for number key presses to discard a tile
-		document.addEventListener("keydown", event => {
-			if(event.ctrlKey && ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)) {
-					var index = Number.parseInt(event.key);
-				var index = index == 0 ? 9 : index-1;
-			}
-			if(event.altKey && ['1', '2', '3', '4'].includes(event.key)) {
-				var index = 9 + Number.parseInt(event.key);
-			}
-			if(index < this.state.myGameState.hand.length) {
-				socket.emit('discard tile', index);
-			}
-		});
+        if (this.state.myGameState.actions.discard) {
         }
       },
     );
+    // set up listener for number key presses to discard a tile
+    document.addEventListener('keydown', event => {
+      if (
+        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)
+      ) {
+        var index = Number.parseInt(event.key);
+        var index = index == 0 ? 9 : index - 1;
+        //console.log('number between 1 and 10, the index is ' + index);
+        if (
+          index < this.state.myGameState.hand.length &&
+          this.state.myGameState.actions.discard
+        ) {
+          socket.emit('discard tile', index);
+          //console.log('index less than hand');
+        }
+      }
+      switch (event.key) {
+        case '-':
+          var index = 10;
+        case '=':
+          var index = 11;
+        case '[':
+          var index = 12;
+        case ']':
+          var index = 13;
+          if (
+            index < this.state.myGameState.hand.length &&
+            this.state.myGameState.actions.discard
+          ) {
+            socket.emit('discard tile', index);
+            break;
+          }
+      }
+    });
   }
 
   render() {

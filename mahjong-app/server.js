@@ -13,7 +13,7 @@ var partialGames = {};
 var lobbyInfo = {players: pidToName, games: partialGames};
 
 function distributeGameState(gameName, gameState) {
-  var room = 'gameName:' + gameName;
+  var roomName = 'gameName:' + gameName;
   io.of('/')
     .in(roomName)
     .clients((error, clients) => {
@@ -191,10 +191,10 @@ io.on('connection', client => {
   //=====================================================
   //Recieved from the overall game board
   //=====================================================
-  socket.on('discard tile', tileIndex => {
-    gameState = ongoingGames[pidToOngoingGames[socket.id]];
-    gameState = GameLogic.discardTile(socket.id, gameState);
-    var gameName = pidToOngoingGames[socket.id];
+  client.on('discard tile', tileIndex => {
+    gameState = ongoingGames[pidToOngoingGames[client.id]];
+    gameState = GameLogic.discardTile(client.id, gameState);
+    var gameName = pidToOngoingGames[client.id];
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   });
