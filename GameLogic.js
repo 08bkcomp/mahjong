@@ -103,6 +103,7 @@ var emptyGame = () => {
     privateInfo: {
       wall: null,
     },
+    queuedAction: null,
   };
 };
 
@@ -468,7 +469,8 @@ var updateActionsOnDiscard = (
 
 var nextOrder = gameState => {
   return (
-    (gameState.publicInfo.currentTurn + 1) % gameState.publicInfo.admin.numPlayers
+    (gameState.publicInfo.currentTurn + 1) %
+    gameState.publicInfo.admin.numPlayers
   );
 };
 
@@ -487,8 +489,8 @@ var discardTile = (pid, gameState, tileIndex) => {
   // now wip actions (cur player can do nothing, others will be recalc)
   gameState = wipeActions(gameState);
 
-	// and resort their hand
-	gameState[pid].hand.sort();
+  // and resort their hand
+  gameState[pid].hand.sort();
 
   // and remove the tile from the discarding player's hand
   var tileToDiscard = gameState[pid].hand[tileIndex];
@@ -580,6 +582,9 @@ var doAction = (action, gameState) => {
     }
   }
   if (setExists) {
+    // if we are in here, then the action will be carried out
+
+    gameState.queuedAction = null;
     gameState = wipeActions(gameState);
     gameState[pid].actions.discard = true;
     gameState[pid].exposed = [

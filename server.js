@@ -44,16 +44,14 @@ var distributeGameState = gameName => {
     });
 };
 
-//setInterval(() => {
-//  for (gameName in ongoingGames) {
-//    console.log(`check status of ${gameName}`);
-//    console.log(
-//      `Keys of ongoingGames[${gameName}].privateInfo: ${Object.keys(
-//        ongoingGames[gameName].privateInfo,
-//      )}`,
-//    );
-//  }
-//}, 3000);
+var forceAction = gameName => {
+  setTimeout(() => {
+    var gameState = ongoingGames[gameName];
+    gameState = GameLogic.doAction(gameState.queuedAction, gameState);
+    ongoingGames[gameName] = gameState;
+    distributeGameState(gameName);
+  }, 7500);
+};
 
 io.on('connection', client => {
   //================================================
@@ -242,6 +240,23 @@ io.on('connection', client => {
     gameState = GameLogic.drawTile(client.id, gameState);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
+  });
+  client.on('queue action', tileGroup => {
+    var action = {
+      pid: client.id,
+      tileGroupForAction: tileGroup,
+    };
+    var gameName = pidToOngoingGames[client.id];
+    var gameState = ongoingGames[gameName];
+    var oldAction = gameState.queuedAction;
+    var actionAlreadyQueued = oldAction != null;
+    if (actionAlreadyQueued) {
+      gameState.queuedAction = GameLogic.actionComparator(action, oldAction);
+      ongoingGames[gameName] = gameState;
+    } else {
+      gameState.queuedAction = action;
+      forceAction(gameName);
+    }
   });
 
   client.on('disconnect', () => {

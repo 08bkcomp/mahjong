@@ -6,6 +6,7 @@ import socket from './socket';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
+import Badge from 'react-bootstrap/Badge';
 
 var winds = {
   east: '\u{1F000}',
@@ -73,9 +74,9 @@ function ExposedGroup(props) {
     props.tileGroup.tiles[2] = tileback;
   }
   return (
-    <div>
+    <div class="discards">
       {props.tileGroup.tiles.map((tile, i) => {
-        return <Tile class={props.class} tile={tile} />;
+        return tile;
       })}
     </div>
   );
@@ -173,7 +174,7 @@ class Board extends Component {
       // =========================================
       //  handler for discarding a tile
       // =========================================
-      var index = -1;
+      var index = null;
       if (
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)
       ) {
@@ -196,7 +197,7 @@ class Board extends Component {
           break;
       }
       if (
-        index >= 0 &&
+        index != null &&
         index < this.state.myGameState.hand.length &&
         this.state.myGameState.actions.discard
       ) {
@@ -216,6 +217,7 @@ class Board extends Component {
       // =========================================
       //  handler for actions
       // =========================================
+      var type = null;
       switch (event.key) {
         case 'c':
           var type = 'chow';
@@ -227,18 +229,27 @@ class Board extends Component {
           var type = 'kong';
           break;
       }
-      var actionList = this.state.myGameState.actions[type];
-      if (actionList.length == 1) {
-        socket.emit('queue action', actionList[0]);
-      } else {
-        this.setState({showActions: type});
+      if (type) {
+        var actionList = this.state.myGameState.actions[type];
+        if (actionList.length == 1) {
+          console.log(`one action option, sending to be queued`);
+          console.log(actionList[0]);
+          socket.emit('queue action', actionList[0]);
+        } else {
+          console.log(`multiple choices:`);
+          console.log(actionList);
+          this.setState({showActions: type});
+        }
       }
-      if (this.state.showActions) {
+      if (index != null && this.state.showActions) {
         // if we are in here, it means the user is already seeing their action options
+        // AND has pressed a number key (hence index != null)
         if (
-          index >= 0 &&
           index < this.state.myGameState.actions[this.state.showActions].length
         ) {
+          var actionList = this.state.myGameState.actions[this.state.showActions];
+          console.log(`action selected, sending to be queued`);
+          console.log(actionList[index]);
           socket.emit('queue action', actionList[index]);
           this.setState({showActions: null});
         }
