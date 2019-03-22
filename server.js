@@ -112,16 +112,13 @@ io.on('connection', client => {
     }
   });
   client.on('leave game', gameName => {
-    console.log('BEFORE---------------------');
     var newGameInfo = partialGames[gameName];
-    console.log(partialGames[gameName]);
     newGameInfo.players.splice(newGameInfo.players.indexOf(client.id), 1);
     newGameInfo.playerNames.splice(
       newGameInfo.playerNames.indexOf(pidToName[client.id]),
       1,
     );
     partialGames[gameName] = newGameInfo;
-    console.log(partialGames[gameName]);
     io.to(newGameInfo.owner).emit('update created game', newGameInfo);
     client.emit('confirm game left', partialGames);
     client.emit('enable create game');
@@ -205,35 +202,13 @@ io.on('connection', client => {
 
       // now we give the starting info of the game to the people in it
       distributeGameState(gameName);
-
-      // we write inside the if statement
-      fs.writeFileSync(
-        '../tests/InsideIf.json',
-        JSON.stringify(ongoingGames[gameName]),
-      );
     }
-    // we write outisde the if statement
-    fs.writeFileSync(
-      '../tests/OutOfIf.json',
-      JSON.stringify(ongoingGames[gameName]),
-    );
   });
   //=====================================================
   //Recieved from the overall game board
   //=====================================================
   client.on('discard tile', tileIndex => {
     var gameName = pidToOngoingGames[client.id];
-    console.log('INSIDE SERVER: discard tile');
-    console.log(
-      `ongoingGames[${gameName}].privateInfo: ${Object.keys(
-        ongoingGames[gameName].privateInfo,
-      )}`,
-    );
-    console.log(
-      `Keys of ongoingGames[${gameName}]: ${Object.keys(
-        ongoingGames[gameName],
-      )}`,
-    );
     gameState = ongoingGames[gameName];
     gameState = GameLogic.discardTile(client.id, gameState, tileIndex);
     ongoingGames[gameName] = gameState;
