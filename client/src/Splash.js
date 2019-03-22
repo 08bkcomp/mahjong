@@ -11,10 +11,10 @@ export default class Splash extends Component {
     this.state = {
       playerCreated: false,
       username: null,
-      usernameExists: false,
+      usernameValid: false,
     };
     socket.on('name already exists', () => {
-      this.setState({usernameExists: true});
+      this.setState({usernameValid: true});
     });
     socket.on('name created', () => {
       document.removeEventListener('keydown', this.enterHandler);
@@ -23,16 +23,29 @@ export default class Splash extends Component {
 
     document.addEventListener('keydown', this.enterHandler);
   }
+  validateUsername = username => {
+    if (username == null) {
+      return false;
+    }
+    if (username.length < 5) {
+      return false;
+    }
+    return true;
+  };
 
   enterHandler = event => {
     console.log(event.key);
-    if (event.key == 'Enter') {
+    if (event.key == 'Enter' && this.validateUsername(this.state.username)) {
       this.createUser();
+    } else {
+      this.setState({
+        usernameValid: this.validateUsername(this.state.username),
+      });
     }
   };
 
   handleNameChange = event => {
-    this.setState({username: event.target.value, usernameExists: false});
+    this.setState({username: event.target.value, usernameValid: false});
   };
 
   createUser = () => {
@@ -51,7 +64,7 @@ export default class Splash extends Component {
           onChange={this.handleNameChange}
         />
         <InputGroup.Append>
-          {this.state.usernameExists ? (
+          {this.state.usernameValid ? (
             <Button variant="outline-danger">Invalid Username</Button>
           ) : (
             <Button variant="success" onClick={this.createUser}>
