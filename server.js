@@ -57,6 +57,11 @@ io.on('connection', client => {
   //================================================
   //Recieved from user creation (home)
   //================================================
+  client.on('check username', nickname => {
+    if (nickname in nameToPid) {
+      client.emit('name already exists');
+    }
+  });
   client.on('create player', nickname => {
     if (nickname in nameToPid) {
       client.emit('name already exists');

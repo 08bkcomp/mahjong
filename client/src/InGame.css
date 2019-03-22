@@ -82,7 +82,6 @@ html,body,#root {
 }
 
 .ophand {
-		display: flex;
 		flex: 1;
 		background-color: purple;
 }
