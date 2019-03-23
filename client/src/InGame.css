@@ -1,109 +1,94 @@
-html,body,#root {
-		height:100vh;
-		min-height:100vh;
-		max-height:100vh;
+html,
+body,
+#root {
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+}
+
+.medium-tile {
+  font-size: 2.5em;
+}
+
+.large-tile {
+  font-size: 2.8em;
+}
+
+.no-flex {
+  flex: 0;
 }
 
 .board {
-		height:100vh;
-		display: flex;
-		margin: 0;
+  height: 100vh;
+  display: flex;
+  margin: 0;
 }
 
-.gameinfo {
-		display: flex;
-		flex-direction: column;
-		flex: 0 0 10em;
-		background-color: green;
+.discard-area {
+  flex: 1;
 }
 
-.littleinfo {
-		flex: 0 0 1.5em;
-		text-align: center;
-		font-size: 3em;
+.game-info {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 10em;
+  background-color: green;
 }
 
-.actionlist {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		align-items: center;
-		justify-content: center;
+.game-status {
+  flex: 0 0 1.5em;
+  text-align: center;
+  font-size: 3em;
 }
 
-.actionactive, .actioninactive {
-		flex: 1;
-		text-align: center;
-		font-size: 3em;
-		justify-content: center;
-		width: 100%;
+.action-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
 }
 
-.actionactive {
-		background-color: orange;
+.action {
+  flex: 1;
+  text-align: center;
+  font-size: 3em;
+  justify-content: center;
+  width: 100%;
 }
 
-.actioninactive {
-		background-color: gray;
+.active {
+  background-color: orange;
 }
 
-.mainboard {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
+.inactive {
+  background-color: gray;
 }
 
-.discards {
-		flex: 1;
-		font-size: 2.5em;
+.main-board {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
-.myfullhand {
-		display: flex;
-		background-color: yellow;
-		flex: 0 0 6em;
-		width: 100%;
+.all-opponents {
+  display: flex;
+  flex-direction: column;
+  background-color: yellow;
 }
 
-.otherhands {
-		display: flex;
-		background-color: yellow;
-		flex: 0 0 4em
+.single-opponent {
+  display: flex;
+  flex: 1 1 4em;
 }
 
-.opponent {
-		display: flex;
-		flex: 1;
+.opponent-wind {
+  flex: 0;
+  background-color: lightblue;
 }
 
-.opwind {
-		flex: 0;
-		background-color: lightblue;
-}
-
-.ophand {
-		flex: 1;
-		background-color: purple;
-}
-
-.myhand {
-		background-color: lightgreen;
-		display: flex;
-}
-
-.myexposed {
-		display: flex;
-}
-
-.focustile {
-	font-size: 2.75em;
-
-}
-
-.othertile {
-		font-size: 2.25em;
-}
-
-.tileback {
-		color: green;
+.opponent-hand {
+  display: flex;
+  flex: 1;
+  background-color: purple;
 }

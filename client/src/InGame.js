@@ -1,12 +1,13 @@
 import React, {Component} from 'react';
-import Alert from 'react-bootstrap/Alert';
 import './InGame.css';
 import './index.css';
 import socket from './socket';
+import Alert from 'react-bootstrap/Alert';
 import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Badge from 'react-bootstrap/Badge';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import Button from 'react-bootstrap/Button';
 
 var winds = {
   east: '\u{1F000}',
@@ -31,38 +32,43 @@ function ActionItem(props) {
 }
 
 function ActionList(props) {
+  var activeVariant = 'info';
+  var inactiveVariant = 'outline-secondary';
   return (
-    <div class="actionlist">
-      <ActionItem active={props.actions.draw} action="Draw" />
-      <ActionItem active={props.actions.discard} action="Discard" />
-      <ActionItem active={props.actions.chow} action="Chow" />
-      <ActionItem active={props.actions.pung} action="Pung" />
-      <ActionItem active={props.actions.kong} action="Kong" />
-      {props.actions.eye ? (
-        <ActionItem active={props.actions.eye} action="Eye (M)" />
-      ) : null}
-      {props.actions.eye ? (
-        <ActionItem active={props.actions.rob} action="Rob (M)" />
-      ) : null}
-      <ActionItem active={props.actions.mahjong} action="Mahjong" />
-    </div>
+    <ButtonGroup vertical>
+      <Button variant={props.actions.draw ? activeVariant : inactiveVariant}>
+        Draw
+      </Button>
+      <Button variant={props.actions.discard ? activeVariant : inactiveVariant}>
+        Discard
+      </Button>
+      <Button variant={props.actions.chow ? activeVariant : inactiveVariant}>
+        Chow
+      </Button>
+      <Button variant={props.actions.pung ? activeVariant : inactiveVariant}>
+        Pung
+      </Button>
+      <Button variant={props.actions.kong ? activeVariant : inactiveVariant}>
+        Kong
+      </Button>
+    </ButtonGroup>
   );
 }
 
 function GameInfo(props) {
   return (
-    <div class="gameinfo">
+    <div class="game-info">
       <Tile
-        class="focustile littleinfo"
+        class="large-tile game-status"
         tile={winds[props.publicInfo.round]}
         comment="R:"
       />
       <Tile
-        class="focustile littleinfo"
+        class="large-tile game-status"
         tile={winds[props.myGameState.wind]}
         comment="P:"
       />
-      <div class="littleinfo">{props.publicInfo.numTilesLeft}</div>
+      <div class="game-status">{props.publicInfo.numTilesLeft}</div>
       <ActionList actions={props.myGameState.actions} />
     </div>
   );
@@ -74,7 +80,7 @@ function ExposedGroup(props) {
     props.tileGroup.tiles[2] = tileback;
   }
   return (
-    <div class="discards">
+    <div class="medium-tile">
       {props.tileGroup.tiles.map((tile, i) => {
         return tile;
       })}
@@ -83,10 +89,16 @@ function ExposedGroup(props) {
 }
 
 function ExposedHand(props) {
+  var tiles = [];
+  let i;
+  for (i = 0; i < props.exposed.length; i++) {
+    var tileGroup = props.exposed[i];
+    tiles = [...tiles, ...tileGroup.tiles];
+  }
   return (
-    <div class={props.divclass}>
-      {props.exposed.map((tileGroup, i) => {
-        return <ExposedGroup tileGroup={tileGroup} class={props.class} />;
+    <div class={props.class}>
+      {tiles.map((tile, i) => {
+        return tile;
       })}
     </div>
   );
@@ -94,13 +106,9 @@ function ExposedHand(props) {
 
 function OpHand(props) {
   return (
-    <div class="opponent">
-      <div class="opwind othertile">{winds[props.wind]}</div>
-      <ExposedHand
-        class="othertile"
-        divclass="ophand"
-        exposed={props.exposed}
-      />
+    <div class="single-opponent">
+      <div class="opponent-wind medium-tile">{winds[props.wind]}</div>
+      <ExposedHand class="medium-tile" exposed={props.exposed} />
     </div>
   );
 }
@@ -109,21 +117,15 @@ function MyHand(props) {
   return (
     <Container>
       <Row>
-        <Alert variant="warning">
-          <ExposedHand
-            class="focustile"
-            divclass="myexposed"
-            exposed={props.exposed}
-          />
-        </Alert>
-      </Row>
-      <Row>
         <Alert variant="info">
-          <div class={'myexposed'}>
+          <div class="large-tile">
             {props.hand.map((tile, i) => {
-              return <Tile class="focustile" tile={tile} />;
+              return tile;
             })}
           </div>
+        </Alert>
+        <Alert variant="warning">
+          <ExposedHand class="large-tile" exposed={props.exposed} />
         </Alert>
       </Row>
     </Container>
@@ -137,7 +139,7 @@ function ShowExposureOptions(props) {
         return (
           <Alert variant={i % 2 == 0 ? 'dark' : 'light'}>
             <Badge variant="dark">{i + 1}</Badge>
-            <ExposedGroup class="focustile" tileGroup={tileGroup} />
+            <ExposedGroup class="large-tile" tileGroup={tileGroup} />
           </Alert>
         );
       })}
@@ -247,7 +249,9 @@ class Board extends Component {
         if (
           index < this.state.myGameState.actions[this.state.showActions].length
         ) {
-          var actionList = this.state.myGameState.actions[this.state.showActions];
+          var actionList = this.state.myGameState.actions[
+            this.state.showActions
+          ];
           console.log(`action selected, sending to be queued`);
           console.log(actionList[index]);
           socket.emit('queue action', actionList[index]);
@@ -282,15 +286,15 @@ class Board extends Component {
           publicInfo={this.state.publicInfo}
           myGameState={this.state.myGameState}
         />
-        <div class="mainboard">
-          <div class="otherhands">
+        <div class="main-board">
+          <div class="all-opponents">
             {Object.keys(this.state.otherExposed).map((wind, i) => {
               return (
                 <OpHand wind={wind} exposed={this.state.otherExposed[wind]} />
               );
             })}
           </div>
-          <div class="discards">
+          <div class="medium-tile discard-area">
             {this.state.publicInfo.discards.map((tile, i) => {
               return tile;
               // return <Tile class="focustile" tile={tile} />;
