@@ -489,12 +489,12 @@ var discardTile = (pid, gameState, tileIndex) => {
   // now wip actions (cur player can do nothing, others will be recalc)
   gameState = wipeActions(gameState);
 
-  // and resort their hand
-  gameState[pid].hand.sort();
-
   // and remove the tile from the discarding player's hand
   var tileToDiscard = gameState[pid].hand[tileIndex];
   gameState[pid].hand.splice(tileIndex, 1);
+  
+  // and resort their hand
+  gameState[pid].hand.sort();
 
   // and add it to list of discards
   gameState.publicInfo.discards = [
