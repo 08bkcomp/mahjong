@@ -632,6 +632,7 @@ var requestExposed = (playerId, gameState) => {
 
 module.exports = {
   initGameState: initGameState,
+  initAdmin: initAdmin,
   requestExposed: requestExposed,
   drawTile: drawTile,
   discardTile: discardTile,

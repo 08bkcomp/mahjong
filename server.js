@@ -78,15 +78,17 @@ var deleteGame = (playerId, gameName) => {
 };
 
 var leaveGame = (playerId, gameName) => {
-  var newGameInfo = partialGames[gameName];
-  newGameInfo.playerIds.splice(newGameInfo.playerIds.indexOf(playerId), 1);
-  newGameInfo.playerUsernames.splice(
-    newGameInfo.playerUsernames.indexOf(playerIdToUsername[playerId]),
-    1,
-  );
-  partialGames[gameName] = newGameInfo;
-  io.to(newGameInfo.owner).emit('update created game', newGameInfo);
-  io.to('lobby').emit('load games', partialGames);
+  if (partialGames[gameName].playerIds.includes(playerId)) {
+    var newGameInfo = partialGames[gameName];
+    newGameInfo.playerIds.splice(newGameInfo.playerIds.indexOf(playerId), 1);
+    newGameInfo.playerUsernames.splice(
+      newGameInfo.playerUsernames.indexOf(playerIdToUsername[playerId]),
+      1,
+    );
+    partialGames[gameName] = newGameInfo;
+    io.to(newGameInfo.owner).emit('update created game', newGameInfo);
+    io.to('lobby').emit('load games', partialGames);
+  }
 };
 
 io.on('connection', client => {
@@ -261,21 +263,36 @@ io.on('connection', client => {
     leaveGame(client.id, gameName);
   });
 
-  client.on('cleanup ongoing game', ()=> {});
+  client.on('cleanup ongoing game', () => {});
 
   client.on('disconnect', () => {
     console.log('player disconnected: ' + client.id);
     // CLEANUP -----------------------
     // First we need to check what has happened
     if (isRegistered(client.id)) {
-      // delete any of their partial games which they own
-      //
-      // remove them from any partial games they are in
-      //
+      for (gameName in partialGames) {
+        // delete any of their partial games which they own
+        deleteGame(client.id, gameName);
+        // remove them from any partial games they are in
+        leaveGame(client.id, gameName);
+      }
+      // for (gameName in ongoingGames) {
       // end any games they are in (2 players)
-      //
+      // if (
+      //   ongoingGames[gameName].publicInfo.admin.playerIds.includes(client.id)
+      // ) {
+      // 	var newPlayerIds = ongoingGames[gameName].publicInfo.admin.playerIds.slice();
+      // 	newPlayerIds.splice(newPlayerIds.indexOf(client.id), 1);
+      // 	var newAdmin = GameLogic.initAdmin(newPlayerIds);
+      // 	var clientTiles = ongoingGames[client.id].hand;
+      // 	for (tileGroup of ongoingGames[client.id].exposed ) {
+      // 		clientTiles = [...clientTiles, ...tileGroup.tiles];
+      // 	}
+      // }
       // rejig any games they are in (3+ players)
-      //
+      // }
+      // deregister
+      delete playerIdToUsername[client.id];
     }
   });
 });
