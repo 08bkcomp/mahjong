@@ -235,8 +235,9 @@ initGameState = players => {
   gameState.publicInfo.currentTurn = 0;
   gameState.publicInfo.admin = initAdmin(players);
 
-  //gameState.privateInfo.wall = shuffle(getNewWall());
-  gameState.privateInfo.wall = getNewWall();
+  gameState.privateInfo.wall = shuffle(getNewWall());
+  // FOR TESTING
+  //gameState.privateInfo.wall = getNewWall();
 
   for (i = 0; i < players.length; i++) {
     var playerId = players[i];
