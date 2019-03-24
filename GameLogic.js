@@ -220,8 +220,9 @@ var initAdmin = players => {
     admin.playerIdToOrder[players[i]] = uncolOrder.indexOf(
       convertWindToOrder(shuffledWinds[i]),
     );
-    admin.orderToPlayerId[uncolOrder.indexOf(convertWindToOrder(shuffledWinds[i]))] =
-      players[i];
+    admin.orderToPlayerId[
+      uncolOrder.indexOf(convertWindToOrder(shuffledWinds[i]))
+    ] = players[i];
   }
   return admin;
 };
@@ -234,14 +235,17 @@ initGameState = players => {
   gameState.publicInfo.currentTurn = 0;
   gameState.publicInfo.admin = initAdmin(players);
 
-  gameState.privateInfo.wall = shuffle(getNewWall());
+  //gameState.privateInfo.wall = shuffle(getNewWall());
+  gameState.privateInfo.wall = getNewWall();
 
   for (i = 0; i < players.length; i++) {
     var playerId = players[i];
     gameState[playerId] = emptyPersonalGame();
 
-    gameState[playerId].wind = gameState.publicInfo.admin.playerIdToWind[playerId];
-    gameState[playerId].order = gameState.publicInfo.admin.playerIdToOrder[playerId];
+    gameState[playerId].wind =
+      gameState.publicInfo.admin.playerIdToWind[playerId];
+    gameState[playerId].order =
+      gameState.publicInfo.admin.playerIdToOrder[playerId];
     gameState[playerId].hand = [];
     gameState[playerId].exposed = [];
 
@@ -270,8 +274,8 @@ var isKong = tiles => {
 };
 
 var kongScenarioOne = (hand, newTile) => {
-  var fullHand = [...hand, newTile];
-  fullHand.sort();
+  hand = [...hand, newTile];
+  hand.sort();
   var allFullConcealedKongs = [];
   for (i = 0; i < hand.length; i++) {
     var possibleKong = hand.slice(i, i + 4);
@@ -312,6 +316,7 @@ var possibleKongs = (hand, exposed, newTile, isDiscard) => {
   //
   // in this function we will compile the results of checking all three scenarios
   // using helper functions from above for each case
+  hand.sort();
   var allKongs;
   if (isDiscard) {
     allKongs = kongScenarioTwo(hand, newTile);
@@ -428,7 +433,7 @@ var drawTile = (playerId, gameState) => {
       // note other that possible kongs and discarding, the current player
       // also cannot do anything else
       gameState[playerId].actions.discard = true;
-      gameState[playerId].kong = possibleKongs(
+      gameState[playerId].actions.kong = possibleKongs(
         gameState[playerId].hand,
         gameState[playerId].exposed,
         newTile,
@@ -492,7 +497,7 @@ var discardTile = (playerId, gameState, tileIndex) => {
   // and remove the tile from the discarding player's hand
   var tileToDiscard = gameState[playerId].hand[tileIndex];
   gameState[playerId].hand.splice(tileIndex, 1);
-  
+
   // and resort their hand
   gameState[playerId].hand.sort();
 
@@ -597,10 +602,15 @@ var doAction = (action, gameState) => {
     // that tile also
     var isOffDiscard = !action.tileGroupForAction.isConcealed;
     if (isOffDiscard) {
-      gameState.publicInfo.discards.pop();
+      var discardedTile = gameState.publicInfo.discards.pop();
+      gameState[playerId].hand = [...gameState[playerId].hand, discardedTile];
+      gameState[playerId].hand.sort();
     }
     for (tile of action.tileGroupForAction.tiles) {
-      gameState[playerId].hand.splice(gameState[playerId].hand.indexOf(tile), 1);
+      gameState[playerId].hand.splice(
+        gameState[playerId].hand.indexOf(tile),
+        1,
+      );
     }
   }
   return gameState;
@@ -611,7 +621,8 @@ var requestExposed = (playerId, gameState) => {
   for (i = 0; i < gameState.publicInfo.admin.numPlayers; i++) {
     otherPlayerId = gameState.publicInfo.admin.playerIds[i];
     if (playerId != otherPlayerId) {
-      otherExposed[gameState[otherPlayerId].wind] = gameState[otherPlayerId].exposed;
+      otherExposed[gameState[otherPlayerId].wind] =
+        gameState[otherPlayerId].exposed;
     } else {
     }
   }

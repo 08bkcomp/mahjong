@@ -15,11 +15,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 var ongoingGames = {};
-var pidToOngoingGames = {};
-var pidToName = {};
-var nameToPid = {};
+var playerIdToOngoingGames = {};
+var playerIdToUsername = {};
+var usernameToPlayerId = {};
 var partialGames = {};
-var lobbyInfo = {players: pidToName, games: partialGames};
+var lobbyInfo = {playerIds: playerIdToUsername, games: partialGames};
 var spareGame;
 
 var distributeGameState = gameName => {
@@ -53,24 +53,60 @@ var forceAction = gameName => {
   }, 7500);
 };
 
+var isRegistered = playerId => {
+  return playerId in playerIdToUsername;
+};
+
+var deleteGame = (playerId, gameName) => {
+  if (partialGames[gameName].owner == playerId) {
+    var gameroom = 'gameName:' + gameName;
+    io.to(gameroom).emit('force leave game');
+    io.to(gameroom).emit('enable create game');
+    io.of('/')
+      .in(gameroom)
+      .clients(function(error, clients) {
+        if (clients.length > 0) {
+          console.log('clients in the room: \n');
+          console.log(clients);
+          clients.forEach(function(socket_id) {
+            io.sockets.sockets[socket_id].leave(gameroom);
+          });
+        }
+      });
+    delete partialGames[gameName];
+  }
+};
+
+var leaveGame = (playerId, gameName) => {
+  var newGameInfo = partialGames[gameName];
+  newGameInfo.playerIds.splice(newGameInfo.playerIds.indexOf(playerId), 1);
+  newGameInfo.playerUsernames.splice(
+    newGameInfo.playerUsernames.indexOf(playerIdToUsername[playerId]),
+    1,
+  );
+  partialGames[gameName] = newGameInfo;
+  io.to(newGameInfo.owner).emit('update created game', newGameInfo);
+  io.to('lobby').emit('load games', partialGames);
+};
+
 io.on('connection', client => {
   //================================================
-  //Recieved from user creation (home)
+  //Recieved from user creation (splash)
   //================================================
-  client.on('check username', nickname => {
-    if (nickname in nameToPid) {
-      client.emit('name already exists');
+  client.on('check username', username => {
+    if (username in usernameToPlayerId) {
+      client.emit('username already exists');
     }
   });
-  client.on('create player', nickname => {
-    if (nickname in nameToPid) {
-      client.emit('name already exists');
+  client.on('create player', username => {
+    if (username in usernameToPlayerId) {
+      client.emit('username already exists');
     } else {
-      pidToName[client.id] = nickname;
-      nameToPid[nickname] = client.id;
-      client.to('lobby').emit('load players', pidToName);
-      client.emit('name created');
-      console.log('new player: ' + client.id + '====' + nickname);
+      playerIdToUsername[client.id] = username;
+      usernameToPlayerId[username] = client.id;
+      client.to('lobby').emit('load players', playerIdToUsername);
+      client.emit('username created');
+      console.log('new player: ' + client.id + '====' + username);
     }
   });
   //================================================
@@ -84,7 +120,7 @@ io.on('connection', client => {
   //Recieved from the player listing area
   //================================================
   client.on('load players', () => {
-    client.emit('load players', pidToName);
+    client.emit('load players', playerIdToUsername);
     console.log(client.id + ' loaded player list');
   });
   //================================================
@@ -95,13 +131,13 @@ io.on('connection', client => {
     console.log(client.id + ' loaded game list');
   });
   client.on('join game', gameName => {
-    var enoughPlayers = partialGames[gameName].players.length == 4;
+    var enoughPlayers = partialGames[gameName].playerIds.length == 4;
     if (enoughPlayers) {
       client.emit('game is full');
     } else {
       var newGameInfo = partialGames[gameName];
-      newGameInfo.players.push(client.id);
-      newGameInfo.playerNames.push(pidToName[client.id]);
+      newGameInfo.playerIds.push(client.id);
+      newGameInfo.playerUsernames.push(playerIdToUsername[client.id]);
       partialGames[gameName] = newGameInfo;
       io.to(newGameInfo.owner).emit('update created game', newGameInfo);
       client.emit('confirm game joined', gameName, newGameInfo);
@@ -112,17 +148,9 @@ io.on('connection', client => {
     }
   });
   client.on('leave game', gameName => {
-    var newGameInfo = partialGames[gameName];
-    newGameInfo.players.splice(newGameInfo.players.indexOf(client.id), 1);
-    newGameInfo.playerNames.splice(
-      newGameInfo.playerNames.indexOf(pidToName[client.id]),
-      1,
-    );
-    partialGames[gameName] = newGameInfo;
-    io.to(newGameInfo.owner).emit('update created game', newGameInfo);
+    leaveGame(client.id, gameName);
     client.emit('confirm game left', partialGames);
     client.emit('enable create game');
-    io.to('lobby').emit('load games', partialGames);
   });
   //================================================
   //Recieved from create game area
@@ -133,8 +161,8 @@ io.on('connection', client => {
       console.log(client.id + ' tried to use gameName ' + gameName);
     } else {
       partialGames[gameName] = {
-        players: [client.id],
-        playerNames: [pidToName[client.id]],
+        playerIds: [client.id],
+        playerUsernames: [playerIdToUsername[client.id]],
         owner: client.id,
       };
       client.emit('confirm game created', partialGames[gameName]);
@@ -143,32 +171,16 @@ io.on('connection', client => {
     }
   });
   client.on('delete game', gameName => {
-    if (partialGames[gameName].owner == client.id) {
-      var gameroom = 'gameName:' + gameName;
-      io.to(gameroom).emit('force leave game');
-      io.to(gameroom).emit('enable create game');
-      io.of('/')
-        .in(gameroom)
-        .clients(function(error, clients) {
-          if (clients.length > 0) {
-            console.log('clients in the room: \n');
-            console.log(clients);
-            clients.forEach(function(socket_id) {
-              io.sockets.sockets[socket_id].leave(gameroom);
-            });
-          }
-        });
-      delete partialGames[gameName];
-      client.emit('confirm game deleted');
-      client.emit('enable join games');
-      client.to('lobby').emit('load games', partialGames);
-    }
+    deleteGame(client.id, gameName);
+    client.emit('confirm game deleted');
+    client.emit('enable join games');
+    client.to('lobby').emit('load games', partialGames);
   });
   client.on('start game', gameName => {
     if (partialGames[gameName].owner == client.id) {
       console.log('START GAME: ' + gameName);
       var roomName = 'gameName:' + gameName;
-      var curPlayers = partialGames[gameName].players;
+      var curPlayers = partialGames[gameName].playerIds;
       //firstly we move people into/out of the correct rooms
       io.of('/')
         .in(roomName)
@@ -191,9 +203,9 @@ io.on('connection', client => {
       ongoingGames[gameName][`newWall`] =
         ongoingGames[gameName].privateInfo.wall;
 
-      // then put the pid -> gameName mappings into memory
-      for (pid of curPlayers) {
-        pidToOngoingGames[pid] = gameName;
+      // then put the playerId -> gameName mappings into memory
+      for (playerId of curPlayers) {
+        playerIdToOngoingGames[playerId] = gameName;
       }
 
       // then delete the partial game and tell the lobby to remove it
@@ -208,14 +220,14 @@ io.on('connection', client => {
   //Recieved from the overall game board
   //=====================================================
   client.on('discard tile', tileIndex => {
-    var gameName = pidToOngoingGames[client.id];
+    var gameName = playerIdToOngoingGames[client.id];
     gameState = ongoingGames[gameName];
     gameState = GameLogic.discardTile(client.id, gameState, tileIndex);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   });
   client.on('draw tile', () => {
-    var gameName = pidToOngoingGames[client.id];
+    var gameName = playerIdToOngoingGames[client.id];
     gameState = ongoingGames[gameName];
     gameState = GameLogic.drawTile(client.id, gameState);
     ongoingGames[gameName] = gameState;
@@ -223,10 +235,10 @@ io.on('connection', client => {
   });
   client.on('queue action', tileGroup => {
     var action = {
-      pid: client.id,
+      playerId: client.id,
       tileGroupForAction: tileGroup,
     };
-    var gameName = pidToOngoingGames[client.id];
+    var gameName = playerIdToOngoingGames[client.id];
     var gameState = ongoingGames[gameName];
     var oldAction = gameState.queuedAction;
     var actionAlreadyQueued = oldAction != null;
@@ -238,9 +250,33 @@ io.on('connection', client => {
       forceAction(gameName);
     }
   });
+  //=====================================================
+  //Recieved to do clean up ops
+  //=====================================================
+  client.on('cleanup created game', gameName => {
+    deleteGame(client.id, gameName);
+  });
+
+  client.on('cleanup joined game', gameName => {
+    leaveGame(client.id, gameName);
+  });
+
+  client.on('cleanup ongoing game', ()=> {});
 
   client.on('disconnect', () => {
     console.log('player disconnected: ' + client.id);
+    // CLEANUP -----------------------
+    // First we need to check what has happened
+    if (isRegistered(client.id)) {
+      // delete any of their partial games which they own
+      //
+      // remove them from any partial games they are in
+      //
+      // end any games they are in (2 players)
+      //
+      // rejig any games they are in (3+ players)
+      //
+    }
   });
 });
 

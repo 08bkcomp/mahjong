@@ -36,15 +36,15 @@ function GameItem(props) {
   if (props.game.owner == socket.id) {
     return null;
   }
-  var pidInGame = props.game.players.includes(socket.id);
-  var enoughPlayers = props.game.players.length == 4;
+  var playerIdInGame = props.game.playerIds.includes(socket.id);
+  var enoughPlayers = props.game.playerIds.length == 4;
   if (enoughPlayers) {
     return (
       <Card>
         <Card.Body>
           <Card.Title>
             {props.gamename}
-            <Badge variant="dark">{props.game.players.length}</Badge>
+            <Badge variant="dark">{props.game.playerIds.length}</Badge>
           </Card.Title>
           <Card.Text>{'This game is full'}</Card.Text>
         </Card.Body>
@@ -56,9 +56,9 @@ function GameItem(props) {
       <Card.Body>
         <Card.Title>
           {props.gamename}
-          <Badge variant="dark">{props.game.players.length}</Badge>
+          <Badge variant="dark">{props.game.playerIds.length}</Badge>
         </Card.Title>
-        {pidInGame ? (
+        {playerIdInGame ? (
           <LeaveGameButton gamename={props.gamename} />
         ) : (
           <JoinGameButton gamename={props.gamename} />

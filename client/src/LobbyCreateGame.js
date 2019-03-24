@@ -16,14 +16,14 @@ function ManageGame(props) {
     <Card>
       <Card.Title>{props.gamename}</Card.Title>
       <ListGroup variant="flush">
-        {props.myGameInfo.playerNames.map((playername, i) => {
+        {props.myGameInfo.playerUsernames.map((playername, i) => {
           return <ListGroup.Item>{playername}</ListGroup.Item>;
         })}
       </ListGroup>
       <Button variant="danger" onClick={deleteGameHandler} block>
         {'Delete Game'}
       </Button>
-      {props.myGameInfo.playerNames.length > 1 ? (
+      {props.myGameInfo.playerUsernames.length > 1 ? (
         <Button variant="success" onClick={startGameHandler} block>
           {'Start Game'}
         </Button>

@@ -13,10 +13,10 @@ export default class Splash extends Component {
       username: null,
       usernameValid: false,
     };
-    socket.on('name already exists', () => {
+    socket.on('username already exists', () => {
       this.setState({usernameValid: true});
     });
-    socket.on('name created', () => {
+    socket.on('username created', () => {
       document.removeEventListener('keydown', this.enterHandler);
       this.setState({playerCreated: true});
     });
