@@ -110,11 +110,11 @@ var emptyGame = () => {
 var emptyAdmin = () => {
   return {
     numPlayers: 0,
-    playerPids: [],
-    windToPid: {},
-    pidToWind: {},
-    pidToOrder: {},
-    orderToPid: [],
+    playerIds: [],
+    windToPlayerId: {},
+    playerIdToWind: {},
+    playerIdToOrder: {},
+    orderToPlayerId: [],
   };
 };
 
@@ -205,7 +205,7 @@ var isBonus = tile => {
 
 var initAdmin = players => {
   var admin = emptyAdmin();
-  admin.playerPids = players;
+  admin.playerIds = players;
   admin.numPlayers = players.length;
 
   var shuffledWinds = shuffle(['east', 'south', 'west', 'north']).slice(
@@ -215,12 +215,12 @@ var initAdmin = players => {
   var uncolOrder = shuffledWinds.map(convertWindToOrder);
   uncolOrder.sort();
   for (i = 0; i < admin.numPlayers; i++) {
-    admin.windToPid[shuffledWinds[i]] = players[i];
-    admin.pidToWind[players[i]] = shuffledWinds[i];
-    admin.pidToOrder[players[i]] = uncolOrder.indexOf(
+    admin.windToPlayerId[shuffledWinds[i]] = players[i];
+    admin.playerIdToWind[players[i]] = shuffledWinds[i];
+    admin.playerIdToOrder[players[i]] = uncolOrder.indexOf(
       convertWindToOrder(shuffledWinds[i]),
     );
-    admin.orderToPid[uncolOrder.indexOf(convertWindToOrder(shuffledWinds[i]))] =
+    admin.orderToPlayerId[uncolOrder.indexOf(convertWindToOrder(shuffledWinds[i]))] =
       players[i];
   }
   return admin;
@@ -237,25 +237,25 @@ initGameState = players => {
   gameState.privateInfo.wall = shuffle(getNewWall());
 
   for (i = 0; i < players.length; i++) {
-    var pid = players[i];
-    gameState[pid] = emptyPersonalGame();
+    var playerId = players[i];
+    gameState[playerId] = emptyPersonalGame();
 
-    gameState[pid].wind = gameState.publicInfo.admin.pidToWind[pid];
-    gameState[pid].order = gameState.publicInfo.admin.pidToOrder[pid];
-    gameState[pid].hand = [];
-    gameState[pid].exposed = [];
+    gameState[playerId].wind = gameState.publicInfo.admin.playerIdToWind[playerId];
+    gameState[playerId].order = gameState.publicInfo.admin.playerIdToOrder[playerId];
+    gameState[playerId].hand = [];
+    gameState[playerId].exposed = [];
 
-    var startHandSize = gameState[pid].order == 0 ? 14 : 13;
-    while (gameState[pid].hand.length < startHandSize) {
+    var startHandSize = gameState[playerId].order == 0 ? 14 : 13;
+    while (gameState[playerId].hand.length < startHandSize) {
       var newTile = gameState.privateInfo.wall.pop();
       if (isBonus(newTile)) {
-        gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
+        gameState[playerId].exposed.push(tileGroup([newTile], 'bonus', false));
       } else {
-        gameState[pid].hand.push(newTile);
+        gameState[playerId].hand.push(newTile);
       }
     }
-    gameState[pid].hand.sort();
-    gameState[pid].actions.discard = gameState[pid].order == 0;
+    gameState[playerId].hand.sort();
+    gameState[playerId].actions.discard = gameState[playerId].order == 0;
   }
   gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
   return gameState;
@@ -272,17 +272,17 @@ var isKong = tiles => {
 var kongScenarioOne = (hand, newTile) => {
   var fullHand = [...hand, newTile];
   fullHand.sort();
-  var allFullConcKongs = [];
+  var allFullConcealedKongs = [];
   for (i = 0; i < hand.length; i++) {
-    var possKong = hand.slice(i, i + 4);
-    if (isKong(possKong)) {
-      allFullConcKongs = [
-        ...allFullConcKongs,
-        tileGroup(possKong, 'kong', true),
+    var possibleKong = hand.slice(i, i + 4);
+    if (isKong(possibleKong)) {
+      allFullConcealedKongs = [
+        ...allFullConcealedKongs,
+        tileGroup(possibleKong, 'kong', true),
       ];
     }
   }
-  return allFullConcKongs;
+  return allFullConcealedKongs;
 };
 
 var kongScenarioTwo = (hand, newTile) => {
@@ -405,15 +405,15 @@ var emptyActions = () => {
 };
 
 var wipeActions = gameState => {
-  for (pid of gameState.publicInfo.admin.playerPids) {
-    gameState[pid].actions = emptyActions();
+  for (playerId of gameState.publicInfo.admin.playerIds) {
+    gameState[playerId].actions = emptyActions();
   }
   return gameState;
 };
 
-var drawTile = (pid, gameState) => {
+var drawTile = (playerId, gameState) => {
   // first check the user is allowed to draw
-  if (!gameState[pid].actions.draw) {
+  if (!gameState[playerId].actions.draw) {
     return gameState;
   }
   // firstly wipe all actions, as the prev discard is now dead
@@ -421,21 +421,21 @@ var drawTile = (pid, gameState) => {
   do {
     var newTile = gameState.privateInfo.wall.pop();
     if (isBonus(newTile)) {
-      gameState[pid].exposed.push(tileGroup([newTile], 'bonus', false));
+      gameState[playerId].exposed.push(tileGroup([newTile], 'bonus', false));
     } else {
       // now we have drawn a normal tile, need to update the possible actions
       // for the current player (everyone else has no actions)
       // note other that possible kongs and discarding, the current player
       // also cannot do anything else
-      gameState[pid].actions.discard = true;
-      gameState[pid].kong = possibleKongs(
-        gameState[pid].hand,
-        gameState[pid].exposed,
+      gameState[playerId].actions.discard = true;
+      gameState[playerId].kong = possibleKongs(
+        gameState[playerId].hand,
+        gameState[playerId].exposed,
         newTile,
         false,
       );
       // now we can add the tile to the hand, since actions have been recalculated
-      gameState[pid].hand = [newTile, ...gameState[pid].hand];
+      gameState[playerId].hand = [newTile, ...gameState[playerId].hand];
     }
   } while (isBonus(newTile));
   gameState.publicInfo.numTilesLeft = gameState.privateInfo.wall.length;
@@ -481,20 +481,20 @@ var incrementCurrentTurn = gameState => {
   return gameState;
 };
 
-var discardTile = (pid, gameState, tileIndex) => {
+var discardTile = (playerId, gameState, tileIndex) => {
   //first check the user can discard
-  if (!gameState[pid].actions.discard) {
+  if (!gameState[playerId].actions.discard) {
     return gameState;
   }
   // now wip actions (cur player can do nothing, others will be recalc)
   gameState = wipeActions(gameState);
 
   // and remove the tile from the discarding player's hand
-  var tileToDiscard = gameState[pid].hand[tileIndex];
-  gameState[pid].hand.splice(tileIndex, 1);
+  var tileToDiscard = gameState[playerId].hand[tileIndex];
+  gameState[playerId].hand.splice(tileIndex, 1);
   
   // and resort their hand
-  gameState[pid].hand.sort();
+  gameState[playerId].hand.sort();
 
   // and add it to list of discards
   gameState.publicInfo.discards = [
@@ -506,13 +506,13 @@ var discardTile = (pid, gameState, tileIndex) => {
   gameState = incrementCurrentTurn(gameState);
 
   // now we need to update everyone elses options
-  for (otherPid of gameState.publicInfo.admin.playerPids) {
+  for (otherPlayerId of gameState.publicInfo.admin.playerIds) {
     var isNextPlayer =
-      gameState.publicInfo.admin.pidToOrder[otherPid] ==
+      gameState.publicInfo.admin.playerIdToOrder[otherPlayerId] ==
       gameState.publicInfo.currentTurn;
-    if (otherPid != pid) {
-      gameState[otherPid] = updateActionsOnDiscard(
-        gameState[otherPid],
+    if (otherPlayerId != playerId) {
+      gameState[otherPlayerId] = updateActionsOnDiscard(
+        gameState[otherPlayerId],
         tileToDiscard,
         isNextPlayer,
       );
@@ -523,7 +523,7 @@ var discardTile = (pid, gameState, tileIndex) => {
 
 var emptyAction = () => {
   return {
-    pid: null,
+    playerId: null,
     tileGroupForAction: null,
   };
 };
@@ -541,14 +541,14 @@ var typeToPriority = type => {
   }
 };
 
-var getRelativisedPidToOrder = publicInfo => {
-  var relPidToOrder = {};
-  for (pid in relPidToOrder) {
-    relPidToOrder[pid] =
-      (publicInfo.admin.pidToOrder[pid] - publicInfo.currentTurn) %
+var getRelativisedPlayerIdToOrder = publicInfo => {
+  var relPlayerIdToOrder = {};
+  for (playerId in relPlayerIdToOrder) {
+    relPlayerIdToOrder[playerId] =
+      (publicInfo.admin.playerIdToOrder[playerId] - publicInfo.currentTurn) %
       publicInfo.numPlayers;
   }
-  return relPidToOrder;
+  return relPlayerIdToOrder;
 };
 
 var actionComparator = (actionA, actionB, publicInfo) => {
@@ -561,9 +561,9 @@ var actionComparator = (actionA, actionB, publicInfo) => {
   } else if (typePriorityA > typePriorityB) {
     return actionB;
   } else {
-    var relPidToOrder = getRelativisedPidToOrder(publicInfo);
-    var seatPriorityA = relPidToOrder[actionA.pid];
-    var seatPriorityB = relPidToOrder[actionB.pid];
+    var relPlayerIdToOrder = getRelativisedPlayerIdToOrder(publicInfo);
+    var seatPriorityA = relPlayerIdToOrder[actionA.playerId];
+    var seatPriorityB = relPlayerIdToOrder[actionB.playerId];
     if (seatPriorityA < seatPriorityB) {
       return actionA;
     } else if (seatPriorityA > seatPriorityB) {
@@ -573,10 +573,10 @@ var actionComparator = (actionA, actionB, publicInfo) => {
 };
 
 var doAction = (action, gameState) => {
-  var pid = action.pid;
+  var playerId = action.playerId;
   var type = action.tileGroupForAction.type;
   var setExists = false;
-  for (possTileGroup of gameState[pid].actions[type]) {
+  for (possTileGroup of gameState[playerId].actions[type]) {
     if (possTileGroup.tiles[0] == action.tileGroupForAction.tiles[0]) {
       setExists = true;
     }
@@ -586,9 +586,9 @@ var doAction = (action, gameState) => {
 
     gameState.queuedAction = null;
     gameState = wipeActions(gameState);
-    gameState[pid].actions.discard = true;
-    gameState[pid].exposed = [
-      ...gameState[pid].exposed,
+    gameState[playerId].actions.discard = true;
+    gameState[playerId].exposed = [
+      ...gameState[playerId].exposed,
       action.tileGroupForAction,
     ];
     // now we must remove the tiles from play. note at this stage, if the
@@ -600,18 +600,18 @@ var doAction = (action, gameState) => {
       gameState.publicInfo.discards.pop();
     }
     for (tile of action.tileGroupForAction.tiles) {
-      gameState[pid].hand.splice(gameState[pid].hand.indexOf(tile), 1);
+      gameState[playerId].hand.splice(gameState[playerId].hand.indexOf(tile), 1);
     }
   }
   return gameState;
 };
 
-var requestExposed = (pid, gameState) => {
+var requestExposed = (playerId, gameState) => {
   var otherExposed = {};
   for (i = 0; i < gameState.publicInfo.admin.numPlayers; i++) {
-    otherPid = gameState.publicInfo.admin.playerPids[i];
-    if (pid != otherPid) {
-      otherExposed[gameState[otherPid].wind] = gameState[otherPid].exposed;
+    otherPlayerId = gameState.publicInfo.admin.playerIds[i];
+    if (playerId != otherPlayerId) {
+      otherExposed[gameState[otherPlayerId].wind] = gameState[otherPlayerId].exposed;
     } else {
     }
   }
