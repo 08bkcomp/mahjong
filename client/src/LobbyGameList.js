@@ -1,10 +1,8 @@
 import React, {Component} from 'react';
-import {Link} from 'react-router-dom';
 import socket from './socket';
 import Card from 'react-bootstrap/Card';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
-import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import CardColumns from 'react-bootstrap/CardColumns';
 
 let joinGameHandler;
@@ -33,11 +31,11 @@ function JoinGameButton(props) {
 }
 
 function GameItem(props) {
-  if (props.game.owner == socket.id) {
+  if (props.game.owner === socket.id) {
     return null;
   }
   var playerIdInGame = props.game.playerIds.includes(socket.id);
-  var enoughPlayers = props.game.playerIds.length == 4;
+  var enoughPlayers = props.game.playerIds.length === 4;
   if (enoughPlayers) {
     return (
       <Card>

@@ -23,14 +23,6 @@ function Tile(props) {
   return <div class={props.class}>{comment + props.tile}</div>;
 }
 
-function ActionItem(props) {
-  return (
-    <div class={props.active ? 'actionactive' : 'actioninactive'}>
-      <span>{props.action}</span>
-    </div>
-  );
-}
-
 function ActionList(props) {
   var activeVariant = 'info';
   var inactiveVariant = 'outline-secondary';
@@ -137,7 +129,7 @@ function ShowExposureOptions(props) {
     <Container>
       {props.tileGroups.map((tileGroup, i) => {
         return (
-          <Alert variant={i % 2 == 0 ? 'dark' : 'light'}>
+          <Alert variant={i % 2 === 0 ? 'dark' : 'light'}>
             <Badge variant="dark">{i + 1}</Badge>
             <ExposedGroup class="large-tile" tileGroup={tileGroup} />
           </Alert>
@@ -181,7 +173,7 @@ class Board extends Component {
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].includes(event.key)
       ) {
         index = Number.parseInt(event.key);
-        index = index == 0 ? 9 : index - 1;
+        index = index === 0 ? 9 : index - 1;
         console.log('number between 1 and 10, the index is ' + index);
       }
       switch (event.key) {
@@ -196,6 +188,8 @@ class Board extends Component {
           break;
         case ']':
           index = 13;
+          break;
+        default:
           break;
       }
       if (
@@ -213,7 +207,7 @@ class Board extends Component {
       // =========================================
       //  handler for drawing a tile
       // =========================================
-      if (event.key == 'd' && this.state.myGameState.actions.draw) {
+      if (event.key === 'd' && this.state.myGameState.actions.draw) {
         socket.emit('draw tile');
       }
       // =========================================
@@ -222,18 +216,20 @@ class Board extends Component {
       var type = null;
       switch (event.key) {
         case 'c':
-          var type = 'chow';
+          type = 'chow';
           break;
         case 'p':
-          var type = 'pung';
+          type = 'pung';
           break;
         case 'k':
-          var type = 'kong';
+          type = 'kong';
+          break;
+        default:
           break;
       }
       if (type) {
         var actionList = this.state.myGameState.actions[type];
-        if (actionList.length == 1) {
+        if (actionList.length === 1) {
           console.log(`one action option, sending to be queued`);
           console.log(actionList[0]);
           socket.emit('queue action', actionList[0]);

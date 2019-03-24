@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import {Link} from 'react-router-dom';
 import socket from './socket';
 
 function PlayerItem(props) {
@@ -28,7 +27,7 @@ export default class PlayerList extends Component {
         <h1>{'Other Players'}</h1>
         <div class="playerlist">
           {this.state.players.map((nickname, i) => {
-            var light = i % 2 == 0;
+            var light = i % 2 === 0;
             return <PlayerItem light={light} nickname={nickname} />;
           })}
         </div>

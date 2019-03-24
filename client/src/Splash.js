@@ -24,7 +24,7 @@ export default class Splash extends Component {
     document.addEventListener('keydown', this.enterHandler);
   }
   validateUsername = username => {
-    if (username == null) {
+    if (username === null) {
       return false;
     }
     if (username.length < 5) {
@@ -35,7 +35,7 @@ export default class Splash extends Component {
 
   enterHandler = event => {
     console.log(event.key);
-    if (event.key == 'Enter' && this.validateUsername(this.state.username)) {
+    if (event.key === 'Enter' && this.validateUsername(this.state.username)) {
       this.createUser();
     } else {
       this.setState({
