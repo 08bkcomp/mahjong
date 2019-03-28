@@ -6,28 +6,30 @@ import socket from './socket';
 
 var firebase = require('firebase');
 var config = {
-  apiKey: 'AIzaSyB2RDY7MVXSuWZj73ZZhX4AWo5phJKPjek',
-  authDomain: 'mahjong-user-auth.firebaseapp.com',
-  databaseURL: 'https://mahjong-user-auth.firebaseio.com',
-  projectId: 'mahjong-user-auth',
-  storageBucket: 'mahjong-user-auth.appspot.com',
-  messagingSenderId: '188181150298',
+  apiKey: process.env.REACT_APP_API_KEY,
+  authDomain: process.env.REACT_APP_AUTH_DOMAIN,
+  databaseURL: process.env.REACT_APP_DATABASE_URL,
+  projectId: process.env.REACT_APP_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_MESSAGING_SENDER_ID,
 };
+
 firebase.initializeApp(config);
 var provider = new firebase.auth.GoogleAuthProvider();
 
 export default class Splash extends Component {
   constructor(props) {
     super(props);
+    console.log(config);
     this.state = {
       status: null,
     };
 
     socket.on('username already exists', () => {
-	    this.setState({status: 'invalid username'});
+      this.setState({status: 'invalid username'});
     });
     socket.on('username created', () => {
-	    this.setState({status: 'username created'});
+      this.setState({status: 'username created'});
     });
   }
 
@@ -53,9 +55,7 @@ export default class Splash extends Component {
       case 'creating username':
         return (
           <Alert>
-            <Alert.Heading>
-		Creating user...
-            </Alert.Heading>
+            <Alert.Heading>Creating user...</Alert.Heading>
           </Alert>
         );
       case 'invalid username':

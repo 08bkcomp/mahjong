@@ -273,26 +273,11 @@ io.on('connection', client => {
     // First we need to check what has happened
     if (isRegistered(client.id)) {
       for (gameName in partialGames) {
-        // delete any of their partial games which they own
-        deleteGame(client.id, gameName);
         // remove them from any partial games they are in
         leaveGame(client.id, gameName);
+        // delete any of their partial games which they own
+        deleteGame(client.id, gameName);
       }
-      // for (gameName in ongoingGames) {
-      // end any games they are in (2 players)
-      // if (
-      //   ongoingGames[gameName].publicInfo.admin.playerIds.includes(client.id)
-      // ) {
-      // 	var newPlayerIds = ongoingGames[gameName].publicInfo.admin.playerIds.slice();
-      // 	newPlayerIds.splice(newPlayerIds.indexOf(client.id), 1);
-      // 	var newAdmin = GameLogic.initAdmin(newPlayerIds);
-      // 	var clientTiles = ongoingGames[client.id].hand;
-      // 	for (tileGroup of ongoingGames[client.id].exposed ) {
-      // 		clientTiles = [...clientTiles, ...tileGroup.tiles];
-      // 	}
-      // }
-      // rejig any games they are in (3+ players)
-      // }
       // deregister
       delete playerIdToUsername[client.id];
     }
