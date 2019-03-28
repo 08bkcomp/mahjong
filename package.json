@@ -14,7 +14,9 @@
     "socket.io": "^2.2.0"
   },
   "devDependencies": {
-    "concurrently": "^4.0.1"
+    "concurrently": "^4.0.1",
+    "eslint": "^5.15.3",
+    "eslint-plugin-react": "^7.12.4"
   },
   "start": "node server.js"
 }

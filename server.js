@@ -1,11 +1,13 @@
+/*eslint no-console: ["error", { allow: ["log"] }] */
+import * as gameLogic from './GameLogic.js';
+import {actionComparator} from './actionHelper.js';
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
 const bodyParser = require('body-parser');
 const socketIO = require('socket.io');
 const port = process.env.PORT || 5000;
-const GameLogic = require('./GameLogic');
-const fs = require('fs');
 
 var app = express();
 var server = http.Server(app);
@@ -19,8 +21,6 @@ var playerIdToOngoingGames = {};
 var playerIdToUsername = {};
 var usernameToPlayerId = {};
 var partialGames = {};
-var lobbyInfo = {playerIds: playerIdToUsername, games: partialGames};
-var spareGame;
 
 var distributeGameState = gameName => {
   var roomName = 'gameName:' + gameName;
@@ -29,7 +29,7 @@ var distributeGameState = gameName => {
     .clients((error, clients) => {
       if (clients.length > 0) {
         clients.forEach(function(socket_id) {
-          var otherExposed = GameLogic.requestExposed(
+          var otherExposed = gameLogic.requestExposed(
             socket_id,
             ongoingGames[gameName],
           );
@@ -47,7 +47,7 @@ var distributeGameState = gameName => {
 var forceAction = gameName => {
   setTimeout(() => {
     var gameState = ongoingGames[gameName];
-    gameState = GameLogic.doAction(gameState.queuedAction, gameState);
+    gameState = gameLogic.doAction(gameState.queuedAction, gameState);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   }, 7500);
@@ -202,13 +202,13 @@ io.on('connection', client => {
       //now we tell all clients for this game to move to the game board (shows loading)
       io.to(roomName).emit('send users to game board');
 
-      // then create a fresh game for them, init by the GameLogic
-      ongoingGames[gameName] = GameLogic.initGameState(curPlayers);
+      // then create a fresh game for them, init by the gameLogic
+      ongoingGames[gameName] = gameLogic.initGameState(curPlayers);
       ongoingGames[gameName][`newWall`] =
         ongoingGames[gameName].privateInfo.wall;
 
       // then put the playerId -> gameName mappings into memory
-      for (playerId of curPlayers) {
+      for (var playerId of curPlayers) {
         playerIdToOngoingGames[playerId] = gameName;
       }
 
@@ -225,15 +225,15 @@ io.on('connection', client => {
   //=====================================================
   client.on('discard tile', tileIndex => {
     var gameName = playerIdToOngoingGames[client.id];
-    gameState = ongoingGames[gameName];
-    gameState = GameLogic.discardTile(client.id, gameState, tileIndex);
+    var gameState = ongoingGames[gameName];
+    gameState = gameLogic.discardTile(client.id, gameState, tileIndex);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   });
   client.on('draw tile', () => {
     var gameName = playerIdToOngoingGames[client.id];
-    gameState = ongoingGames[gameName];
-    gameState = GameLogic.drawTile(client.id, gameState);
+    var gameState = ongoingGames[gameName];
+    gameState = gameLogic.drawTile(client.id, gameState);
     ongoingGames[gameName] = gameState;
     distributeGameState(gameName);
   });
@@ -247,7 +247,7 @@ io.on('connection', client => {
     var oldAction = gameState.queuedAction;
     var actionAlreadyQueued = oldAction != null;
     if (actionAlreadyQueued) {
-      gameState.queuedAction = GameLogic.actionComparator(action, oldAction);
+      gameState.queuedAction = actionComparator(action, oldAction);
       ongoingGames[gameName] = gameState;
     } else {
       gameState.queuedAction = action;
@@ -272,7 +272,7 @@ io.on('connection', client => {
     // CLEANUP -----------------------
     // First we need to check what has happened
     if (isRegistered(client.id)) {
-      for (gameName in partialGames) {
+      for (var gameName in partialGames) {
         // remove them from any partial games they are in
         leaveGame(client.id, gameName);
         // delete any of their partial games which they own
@@ -294,5 +294,5 @@ if (process.env.NODE_ENV === 'production') {
 }
 // Starts the server.
 server.listen(port, function() {
-  console.log('Starting server on port 5000');
+  console.log(`Starting server on port ${port}`);
 });

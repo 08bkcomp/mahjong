@@ -61,9 +61,7 @@ var dots = [
   '\u{1F021}',
 ];
 
-var tileback = '\u{1F02B}';
-
-var getNewWall = () => {
+export var getNewWall = () => {
   // NB the wall returned from this is NOT SHUFFLED
   // first add tiles for which there are four copies
   var wall = [
@@ -93,7 +91,7 @@ var nonHonourSuitCheckers = [
   getCheckSuitFn(bamboo),
 ];
 
-var isBonus = tile => {
+export var isBonus = tile => {
   return isFlower(tile) || isSeason(tile);
 };
 
@@ -103,16 +101,24 @@ var checkAllOneSuit = (tiles, isSuit) => {
   );
 };
 
-var checkAllSameNonHonourSuit = tiles => {
+export var checkAllSameNonHonourSuit = tiles => {
   var isAllSameSuit = false;
-  for (isSuit of nonHonourSuitCheckers) {
+  for (var isSuit of nonHonourSuitCheckers) {
     isAllSameSuit = isAllSameSuit || checkAllOneSuit(tiles, isSuit);
   }
   return isAllSameSuit;
 };
 
-module.exports = {
-  getNewWall: getNewWall,
-  isBonus: isBonus,
-  checkAllSameNonHonourSuit: checkAllSameNonHonourSuit,
+export var tileGroup = (tiles, type, isConcealed) => {
+  return {
+    tiles: tiles,
+    type: type,
+    isConcealed: isConcealed,
+  };
 };
+
+// module.exports = {
+//   getNewWall: getNewWall,
+//   isBonus: isBonus,
+//   checkAllSameNonHonourSuit: checkAllSameNonHonourSuit,
+// };
