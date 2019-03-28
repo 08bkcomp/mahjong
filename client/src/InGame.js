@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {Redirect} from 'react-router-dom';
 import './InGame.css';
 import './index.css';
 import socket from './socket';
@@ -143,26 +144,31 @@ class Board extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      status: null,
       gameLoaded: false,
       publicInfo: null,
       myGameState: null,
       otherExposed: null,
     };
+    socket.on('unregistered user', () => {
+      this.setState({
+        status: 'unregistered',
+      });
+    });
     socket.on(
       'reload game state',
       (publicInfo, personalGameState, otherExposed) => {
         this.setState({
+          status: null,
           showActions: null,
           gameLoaded: true,
           publicInfo: publicInfo,
           myGameState: personalGameState,
           otherExposed: otherExposed,
         });
-        if (this.state.myGameState.actions.discard) {
-        }
       },
     );
-    // set up listener for number key presses to discard a tile
+    // set up listener for any possible actions
     document.addEventListener('keydown', event => {
       console.log(`pressed key: ${event.key}`);
       // =========================================
@@ -259,6 +265,10 @@ class Board extends Component {
 
   render() {
     console.log(this.state);
+    if (this.state.status === 'unregistered') {
+      return <Redirect to="/" />;
+    }
+
     if (!this.state.gameLoaded) {
       return (
         <Alert>

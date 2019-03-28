@@ -19,11 +19,16 @@ var provider = new firebase.auth.GoogleAuthProvider();
 export default class Splash extends Component {
   constructor(props) {
     super(props);
-    this.state = {playerCreated: false, redirect: false};
-    setInterval(() => {
-      console.log(this.state);
-    }, 5000);
-    this.redirectToLogin = this.redirectToLogin.bind(this);
+    this.state = {
+      status: null,
+    };
+
+    socket.on('username already exists', () => {
+	    this.setState({status: 'invalid username'});
+    });
+    socket.on('username created', () => {
+	    this.setState({status: 'username created'});
+    });
   }
 
   redirectToLogin = () => {
@@ -34,10 +39,7 @@ export default class Splash extends Component {
         console.log('user data from google');
         console.log(result.user);
         socket.emit('create player', result.user.email);
-        this.setState({playerCreated: true});
-        setTimeout(() => {
-          this.setState({redirect: true});
-        }, 1500);
+        this.setState({status: 'creating username'});
       })
       .catch(error => {
         console.log(error);
@@ -45,21 +47,35 @@ export default class Splash extends Component {
   };
 
   render() {
-    if (this.state.redirect) {
-      return <Redirect to="/lobby" />;
+    switch (this.state.status) {
+      case 'username created':
+        return <Redirect to="/lobby" />;
+      case 'creating username':
+        return (
+          <Alert>
+            <Alert.Heading>
+		Creating user...
+            </Alert.Heading>
+          </Alert>
+        );
+      case 'invalid username':
+        setTimeout(() => {
+          this.setState({status: null});
+        }, 5000);
+        return (
+          <Alert>
+            <Alert.Heading>
+              It seems like you are already logged in.
+            </Alert.Heading>
+          </Alert>
+        );
+      default:
+        return (
+          <Alert>
+            <Alert.Heading>Please login with provider...</Alert.Heading>
+            <Button onClick={this.redirectToLogin}>Go to login</Button>
+          </Alert>
+        );
     }
-    if (this.state.playerCreated) {
-      return (
-        <Alert>
-          <Alert.Heading>Redirecting to lobby...</Alert.Heading>
-        </Alert>
-      );
-    }
-    return (
-      <Alert>
-        <Alert.Heading>Please login with provider...</Alert.Heading>
-        <Button onClick={this.redirectToLogin}>Go to login</Button>
-      </Alert>
-    );
   }
 }

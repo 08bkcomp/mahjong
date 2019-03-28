@@ -107,6 +107,7 @@ io.on('connection', client => {
       playerIdToUsername[client.id] = username;
       usernameToPlayerId[username] = client.id;
       client.to('lobby').emit('load players', playerIdToUsername);
+      client.join('lobby');
       client.emit('username created');
       console.log('new player: ' + client.id + '====' + username);
     }
@@ -114,9 +115,10 @@ io.on('connection', client => {
   //================================================
   //Recieved from the overall lobby
   //================================================
-  client.on('join lobby', () => {
-    client.join('lobby');
-    console.log(client.id + ' joined the LOBBY');
+  client.on('check registration', () => {
+    if (!isRegistered(client.id)) {
+      client.emit('unregistered user');
+    }
   });
   //================================================
   //Recieved from the player listing area
