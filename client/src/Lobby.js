@@ -11,35 +11,43 @@ import Row from 'react-bootstrap/Row';
 export default class Lobby extends Component {
   constructor(props) {
     super(props);
-    this.state = {gameStarted: false};
+    this.state = {status: null};
 
     socket.on('send users to game board', () => {
       this.setState({
-        gameStarted: true,
+        status: 'game started',
       });
     });
-
-    socket.emit('join lobby');
+    socket.on('unregistered user', () => {
+      this.setState({
+        status: 'unregistered',
+      });
+    });
+    socket.emit('check registration');
   }
 
   render() {
-    if (this.state.gameStarted) {
-      return <Redirect to="/game" />;
+    switch (this.state.status) {
+      case 'game started':
+        return <Redirect to="/game" />;
+      case 'unregistered':
+        return <Redirect to="/" />;
+      default:
+        return (
+          <Container>
+            <Row>
+              <Col>
+                <CreateGame />
+              </Col>
+              <Col>
+                <GameList />
+              </Col>
+              <Col>
+                <PlayerList />
+              </Col>
+            </Row>
+          </Container>
+        );
     }
-    return (
-      <Container>
-        <Row>
-          <Col>
-            <CreateGame />
-          </Col>
-          <Col>
-            <GameList />
-          </Col>
-          <Col>
-            <PlayerList />
-          </Col>
-        </Row>
-      </Container>
-    );
   }
 }

@@ -52,18 +52,17 @@ export default class CreateGame extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      haveOwnGame: false,
+      status: null,
       myGameName: null,
       myGameInfo: {},
-      inOtherGame: false,
     };
 
     socket.on('confirm game created', gameInfo => {
-      this.setState({haveOwnGame: true, myGameInfo: gameInfo});
+      this.setState({status: 'have own game', myGameInfo: gameInfo});
     });
     socket.on('confirm game deleted', () => {
       this.setState({
-        haveOwnGame: false,
+        status: null,
         myGameName: null,
         myGameInfo: {},
       });
@@ -75,16 +74,16 @@ export default class CreateGame extends Component {
       this.setState({myGameInfo: gameInfo});
     });
     socket.on('disable create game', () => {
-      this.setState({inOtherGame: true});
+      this.setState({status: 'in other game'});
     });
     socket.on('enable create game', () => {
-      this.setState({inOtherGame: false});
+      this.setState({status: null});
     });
 
     updateMyGameNameHandler = this.updateMyGameNameHandler;
     createGameHandler = this.createGameHandler;
     deleteGameHandler = this.deleteGameHandler;
-	  startGameHandler = this.startGameHandler;
+    startGameHandler = this.startGameHandler;
   }
 
   updateMyGameNameHandler = event => {
@@ -104,25 +103,27 @@ export default class CreateGame extends Component {
   };
 
   render() {
-    if (this.state.haveOwnGame) {
-      return (
-        <ManageGame
-          gamename={this.state.myGameName}
-          myGameInfo={this.state.myGameInfo}
-        />
-      );
-    } else if (this.state.inOtherGame) {
-      return (
-        <Card>
-          <Card.Title>{'You are in another game'}</Card.Title>
-          <Card.Text>
-            {
-              'Please leave the game you are in before trying to create a new game.'
-            }
-          </Card.Text>
-        </Card>
-      );
+    switch (this.state.status) {
+      case 'have own game':
+        return (
+          <ManageGame
+            gamename={this.state.myGameName}
+            myGameInfo={this.state.myGameInfo}
+          />
+        );
+      case 'in other game':
+        return (
+          <Card>
+            <Card.Title>{'You are in another game'}</Card.Title>
+            <Card.Text>
+              {
+                'Please leave the game you are in before trying to create a new game.'
+              }
+            </Card.Text>
+          </Card>
+        );
+      default:
+        return <CreateGameCard myGameName={this.state.myGameName} />;
     }
-    return <CreateGameCard myGameName={this.state.myGameName} />;
   }
 }
