@@ -74,6 +74,7 @@ var deleteGame = (playerId, gameName) => {
         }
       });
     delete partialGames[gameName];
+    io.to('lobby').emit('load games', partialGames);
   }
 };
 
@@ -279,7 +280,10 @@ io.on('connection', client => {
         deleteGame(client.id, gameName);
       }
       // deregister
+      console.log(playerIdToUsername);
+      delete usernameToPlayerId[playerIdToUsername[client.id]];
       delete playerIdToUsername[client.id];
+      console.log(playerIdToUsername);
     }
   });
 });

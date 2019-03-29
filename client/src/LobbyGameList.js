@@ -100,7 +100,6 @@ export default class GameList extends Component {
       });
     });
     socket.on('force leave game', () => {
-      alert('The owner has deleted the game.');
       this.setState({
         joinedGame: false,
         gameinfo: null,
