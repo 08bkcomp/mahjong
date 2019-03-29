@@ -1,6 +1,6 @@
 /*eslint no-console: ["error", { allow: ["log"] }] */
-import * as gameLogic from './GameLogic.js';
-import {actionComparator} from './actionHelper.js';
+const gameLogic = require('./GameLogic.js');
+const actionComparator = require('./actionHelper').actionComparator;
 
 const express = require('express');
 const http = require('http');

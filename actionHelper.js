@@ -21,7 +21,7 @@ var getRelativisedPlayerIdToOrder = publicInfo => {
   return relPlayerIdToOrder;
 };
 
-export var actionComparator = (actionA, actionB, publicInfo) => {
+var actionComparator = (actionA, actionB, publicInfo) => {
   var typeA = actionA.tileGroupForAction.type;
   var typeB = actionB.tileGroupForAction.type;
   var typePriorityA = typeToPriority(typeA);
@@ -41,3 +41,7 @@ export var actionComparator = (actionA, actionB, publicInfo) => {
     }
   }
 };
+
+module.exports = {
+	actionComparator: actionComparator,
+}

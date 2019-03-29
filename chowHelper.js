@@ -1,4 +1,4 @@
-import {tileGroup} from './tileHelper.js';
+const tileGroup = require('./tileHelper.js').tileGroup;
 
 var findShiftedTile = (hand, compareTile, shift) => {
   var checkTile = tile => {
@@ -34,7 +34,7 @@ var lowerChow = (hand, newTile) => {
   return [];
 };
 
-export var possibleChows = (hand, newTile) => {
+var possibleChows = (hand, newTile) => {
   var allChows = [
     ...upperChow(hand, newTile),
     ...middleChow(hand, newTile),
@@ -45,3 +45,7 @@ export var possibleChows = (hand, newTile) => {
   }
   return false;
 };
+
+module.exports = {
+	possibleChows: possibleChows,
+}

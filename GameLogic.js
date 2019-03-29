@@ -1,7 +1,7 @@
-import * as tileHelper from './tileHelper.js';
-import {possibleKongs} from './kongHelper.js';
-import {possiblePungs} from './pungHelper.js';
-import {possibleChows} from './chowHelper.js';
+const tileHelper = require('./tileHelper');
+const possibleKongs = require('./kongHelper').possibleKongs;
+const possiblePungs = require('./pungHelper').possiblePungs;
+const possibleChows = require('./chowHelper').possibleChows;
 
 var initEmptyGame = () => {
   return {
@@ -74,7 +74,7 @@ var convertWindToOrder = wind => {
   }
 };
 
-export var initAdmin = players => {
+var initAdmin = players => {
   var admin = initEmptyAdmin();
   admin.playerIds = players;
   admin.numPlayers = players.length;
@@ -98,7 +98,7 @@ export var initAdmin = players => {
   return admin;
 };
 
-export var initGameState = players => {
+var initGameState = players => {
   var gameState = initEmptyGame();
 
   gameState.publicInfo.round = shuffle(['east', 'south', 'west', 'north'])[0];
@@ -159,7 +159,7 @@ var wipeActions = gameState => {
   return gameState;
 };
 
-export var drawTile = (playerId, gameState) => {
+var drawTile = (playerId, gameState) => {
   // first check the user is allowed to draw
   if (!gameState[playerId].actions.draw) {
     return gameState;
@@ -229,7 +229,7 @@ var incrementCurrentTurn = gameState => {
   return gameState;
 };
 
-export var discardTile = (playerId, gameState, tileIndex) => {
+var discardTile = (playerId, gameState, tileIndex) => {
   //first check the user can discard
   if (!gameState[playerId].actions.discard) {
     return gameState;
@@ -269,7 +269,7 @@ export var discardTile = (playerId, gameState, tileIndex) => {
   return gameState;
 };
 
-export var doAction = (action, gameState) => {
+var doAction = (action, gameState) => {
   var playerId = action.playerId;
   var type = action.tileGroupForAction.type;
   var setExists = false;
@@ -308,7 +308,7 @@ export var doAction = (action, gameState) => {
   return gameState;
 };
 
-export var requestExposed = (playerId, gameState) => {
+var requestExposed = (playerId, gameState) => {
   var otherExposed = {};
   for (var i = 0; i < gameState.publicInfo.admin.numPlayers; i++) {
     var otherPlayerId = gameState.publicInfo.admin.playerIds[i];
@@ -318,4 +318,13 @@ export var requestExposed = (playerId, gameState) => {
     }
   }
   return otherExposed;
+};
+
+module.exports = {
+  initGameState: initGameState,
+  initAdmin: initAdmin,
+  requestExposed: requestExposed,
+  drawTile: drawTile,
+  discardTile: discardTile,
+  doAction: doAction,
 };

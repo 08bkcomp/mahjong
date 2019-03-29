@@ -1,4 +1,4 @@
-import {tileGroup} from './tileHelper.js'
+const tileGroup = require('./tileHelper.js').tileGroup;
 
 var isKong = tiles => {
   var uniqueTiles = new Set(tiles);
@@ -41,7 +41,7 @@ var kongScenarioThree = (exposed, newTile) => {
   return [];
 };
 
-export var possibleKongs = (hand, exposed, newTile, isDiscard) => {
+var possibleKongs = (hand, exposed, newTile, isDiscard) => {
   // in this function, we check given a hand of concealed tiles and a new one
   // what kongs are possible. note the THREE ways one may get a kong opportunity:
   //
@@ -66,3 +66,7 @@ export var possibleKongs = (hand, exposed, newTile, isDiscard) => {
   }
   return false;
 };
+
+module.exports = {
+	possibleKongs: possibleKongs,
+}

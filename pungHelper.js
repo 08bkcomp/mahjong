@@ -1,6 +1,6 @@
-import {tileGroup} from './tileHelper.js';
+const tileGroup = require('./tileHelper.js').tileGroup;
 
-export var possiblePungs = (hand, newTile) => {
+var possiblePungs = (hand, newTile) => {
   var matches = hand.filter(tile => tile == newTile);
   if (matches.length >= 2) {
     // not we cannot use [...matches, newTile] since if you already have 3
@@ -10,3 +10,6 @@ export var possiblePungs = (hand, newTile) => {
   return false;
 };
 
+module.exports = {
+	possiblePungs: possiblePungs,
+}
